@@ -1,6 +1,6 @@
 # ADR-0004: Import/export – own format plus Catima compatibility mode
 
-- Status: accepted (one detail open, arc42 Q-7)
+- Status: accepted
 - Date: 2026-11-08
 - arc42 reference: 1.1 (F-05, F-11), 4.2
 
@@ -17,8 +17,12 @@ Users of Catima should be able to switch to MyCards.
   e.g. with the `@zip.js/zip.js` library – to be confirmed in implementation.
 - **Catima format:** implemented from the observed file format only – no Catima code is used
   (ADR-0007). Fields without a counterpart are dropped or mapped; the mapping is documented.
-- **Import replaces existing data; there is no merge logic.** Exact scope (all data vs. matching
-  cards only) is open – arc42 Q-7.
+- **Import, no merge logic:**
+  - Default: cards contained in the import file overwrite the matching existing cards completely;
+    all other existing cards stay untouched.
+  - Option "clean import" (setting): all existing data is deleted before importing.
+  - Matching key for "same card" (own format: card id; Catima: Catima id or card ID + store) is
+    defined in the format specification.
 - Files are read/written via the Android system file picker (Storage Access Framework) and/or the
   share sheet.
 

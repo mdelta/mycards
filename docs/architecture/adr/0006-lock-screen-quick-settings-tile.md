@@ -1,6 +1,6 @@
 # ADR-0006: Lock-screen display via Quick-Settings tile
 
-- Status: accepted (implementation variant open, arc42 Q-9)
+- Status: accepted
 - Date: 2026-11-08
 - arc42 reference: 1.1 (F-08), 4.2, 11.1
 
@@ -15,9 +15,9 @@ A **Quick-Settings tile** (Android `TileService`) opens a screen that is display
 screen (Activity with "show when locked"). Only cards the user has marked "show on lock screen"
 are displayed. The user can swipe between them; favorites come first.
 
-## Implementation variants (Q-9)
+## Implementation variants
 
-1. **[Proposal]** Separate minimal native Activity (Kotlin) that only displays barcode images.
+1. **[Chosen]** Separate minimal native Activity (Kotlin) that only displays barcode images.
    The TypeScript app renders the barcode images and writes them plus an ordered list to app
    storage whenever cards change. No other app functionality is reachable over the lock screen.
 2. Start the Capacitor WebView in a restricted "lock mode". Less Kotlin, but higher risk of

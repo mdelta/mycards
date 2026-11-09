@@ -15,14 +15,16 @@ Source: initial request by the product owner (2026-11-08).
 | ID   | Requirement                                                                                          | Priority  |
 |------|------------------------------------------------------------------------------------------------------|-----------|
 | F-01 | Manage loyalty cards (create, edit, delete, list), comparable to Catima                              | Must      |
-| F-02 | Scan a card's barcode with the device camera                                                         | Must      |
+| F-02 | Scan a card's barcode with the device camera – the only scan source (no import from images/screenshots) | Must      |
 | F-03 | Present a card's barcode quickly and readable for shop scanners                                      | Must      |
 | F-04 | All data is stored locally on the device only                                                        | Must      |
 | F-05 | Import and export of all data                                                                        | Must      |
-| F-06 | Attach one or more websites to a card                                                                | Must      |
+| F-06 | Homepage URL per card, plus further websites                                                          | Must      |
 | F-09 | Attach photos to a card (e.g. front/back)                                                            | Must      |
 | F-10 | Create a card manually (enter number and barcode format without scanning)                            | Must      |
 | F-11 | Import/export: user chooses own format or Catima-compatible format                                    | Must      |
+| F-12 | Card fields: tags, icon, color, all fields Catima supports, homepage URL (ADR-0016)                   | Must      |
+| F-13 | Support all barcode types that can be scanned (ML Kit) and rendered (ADR-0017)                        | Must      |
 | F-07 | Search for the card's shop near the current location and show it in Google Maps or OpenStreetMap     | Must      |
 | F-08 | Show barcodes of cards marked "show on lock screen" without unlocking; swipe between them, favorites first | Optional  |
 | N-01 | Android app, distributed via Google Play Store                                                        | Must      |
@@ -55,7 +57,7 @@ Remaining scope questions: see section 11.2.
 
 | Constraint                                           | Source / status |
 |------------------------------------------------------|-----------------|
-| Platform: Android only, **no iOS**                   | [DECIDED] PO, 2026-11-08 |
+| Platform: Android **phones** only – no iOS, no tablet-specific layouts | [DECIDED] PO, 2026-11-08 |
 | Minimum Android version: **Android 14 (API level 34)** | [DECIDED] ADR-0011 |
 | UI language English; texts prepared for later translation | [DECIDED] ADR-0012 |
 | Distribution: Google Play Store (AAB, Play App Signing, target-API requirement, Data-safety form, privacy policy URL) | Request / Google policy – current values to be verified at release time |
@@ -123,10 +125,10 @@ pure-TypeScript way on Android to render on/over the lock screen.
 | UI framework | Angular with Ionic Framework components first | [DECIDED] ADR-0002, ADR-0009 |
 | Barcode scanning | Google ML Kit | [DECIDED] ADR-0010 |
 | Persistence | SQLite plugin · key-value (Preferences) · JSON file in app sandbox | [PROPOSAL] SQLite for card data, photos as files in the app sandbox referenced from SQLite (ADR-0003) |
-| Barcode rendering | `bwip-js` (many formats incl. Aztec, PDF417, DataMatrix) · `zxing` | `bwip-js`, renders offline |
+| Barcode rendering | `bwip-js` (many formats incl. Aztec, PDF417, DataMatrix) · `zxing` | [PROPOSAL] `bwip-js`, renders offline (ADR-0017) |
 | Export format | User chooses: own format (ZIP, optional password) or Catima format; import replaces, no merge | [DECIDED] ADR-0004 |
 | Nearby shop search | Open external map app with search query – no location permission, no API key | [DECIDED] ADR-0005 |
-| Lock-screen display | Quick-Settings tile → Activity over lock screen, marked cards only, swipe, favorites first | [DECIDED] ADR-0006. Implementation variant [OPEN Q-9] |
+| Lock-screen display | Quick-Settings tile → separate native Activity with pre-rendered barcode images, marked cards only, swipe, favorites first | [DECIDED] ADR-0006 |
 | Build & release | GitHub Actions building signed AAB + upload to Google Play | [DECIDED] ADR-0008. Tooling open [OPEN Q-14] |
 
 ---
@@ -163,15 +165,17 @@ flowchart TB
 Idea: domain logic is plain TypeScript with adapter interfaces, so it is unit-testable without a
 device and independent of the chosen framework.
 
-### 5.1 Domain model (draft – further fields [OPEN Q-5])
+### 5.1 Domain model (draft, see ADR-0016)
 
-| Entity   | Attributes (candidate) |
-|----------|------------------------|
-| Card     | id, name/store, barcode value, barcode format, card number (display), color/icon, note, favorite, showOnLockScreen, created/updated, last used |
-| Website  | id, cardId, label, URL |
-| Shop search | cardId, search term (default = store name) |
-| Photo    | id, cardId, role (front/back/other), file reference |
-| Optional | expiry date, balance, groups/tags, saved shop locations – [OPEN Q-5] |
+| Entity   | Attributes |
+|----------|------------|
+| Card     | id, store name, card ID (number shown to humans), barcode value (if different from card ID), barcode type, note, valid from, expiry date, balance + balance type/currency, color, icon, favorite, archived, showOnLockScreen, homepage URL, shop search term (default = store name), created/updated, last used |
+| Tag      | id, name (n:m with Card; corresponds to Catima groups) |
+| Website  | id, cardId, label, URL (further links besides the homepage) |
+| Photo    | id, cardId, role (front/back/icon/other), file reference |
+
+The exact Catima field list is verified against real Catima export files before implementation
+(ADR-0016).
 
 ---
 
@@ -226,7 +230,7 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 | [0003](adr/0003-persistence.md) | Persistence | proposed |
 | [0004](adr/0004-import-export-format.md) | Import/export: own ZIP format or Catima format | accepted |
 | [0005](adr/0005-shop-search-external-map-app.md) | Shop search via external map app | accepted |
-| [0006](adr/0006-lock-screen-quick-settings-tile.md) | Lock screen via Quick-Settings tile | accepted (variant open) |
+| [0006](adr/0006-lock-screen-quick-settings-tile.md) | Lock screen via Quick-Settings tile + native Activity | accepted |
 | [0007](adr/0007-license-and-clean-room.md) | License GPL v3, no code reuse from Catima | accepted |
 | [0008](adr/0008-release-via-github-actions.md) | Releases via GitHub Actions | accepted (tooling open) |
 | [0009](adr/0009-ui-components-ionic.md) | UI components: Ionic Framework | accepted |
@@ -236,6 +240,8 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 | [0013](adr/0013-no-app-lock.md) | No app lock (PIN/biometric) | accepted |
 | [0014](adr/0014-android-auto-backup-enabled.md) | Android Auto Backup enabled | accepted |
 | [0015](adr/0015-keep-internet-permission.md) | Keep INTERNET permission | accepted |
+| [0016](adr/0016-card-data-model.md) | Card data model (Catima fields + tags, icon, color, homepage) | accepted |
+| [0017](adr/0017-barcode-types-and-input.md) | All barcode types; camera-only scanning | accepted |
 
 ---
 
@@ -268,13 +274,8 @@ Answered questions are removed and recorded as ADRs.
 
 | ID | Question |
 |----|----------|
-| Q-5 | Further card fields: expiry date, balance, notes, groups/tags, colors/icons? |
-| Q-6 | Additional barcode input: from image/screenshot? Which barcode formats are required (proposal: all formats Catima supports, for import compatibility)? |
-| Q-7 | Import "replace": delete **all** existing data before import, or only overwrite cards that also exist in the import file (and keep the rest)? |
-| Q-9 | Lock-screen implementation variant (ADR-0006): separate native Activity showing pre-rendered barcode images (proposal) vs. Capacitor WebView in a restricted mode? |
 | Q-10 | Priority of quality goals (1.2) |
 | Q-14 | Release tooling: Gradle Play Publisher, fastlane supply, or a GitHub Action; which tracks get automatic uploads (internal only / production)? Release trigger (tag, manual)? |
-| Q-16 | Target devices: phones only, or tablets too? |
 
 ---
 
