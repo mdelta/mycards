@@ -1,7 +1,7 @@
 # MyCards
 
 Android app for managing loyalty cards – scan, store locally, and present barcodes quickly.
-Built with Capacitor and Angular (TypeScript).
+Built with Capacitor, Angular and Ionic (TypeScript).
 
 ## Documentation
 
@@ -12,4 +12,4 @@ Every implementation step must reference the relevant arc42 section or ADR.
 
 ## License
 
-GNU General Public License v3 – see [LICENSE](LICENSE).
+GNU General Public License v3 or later (`GPL-3.0-or-later`) – see [LICENSE](LICENSE).

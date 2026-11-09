@@ -11,8 +11,8 @@ licensed under the latest GPL.
 
 ## Decision
 
-- License: **GNU General Public License version 3** (`LICENSE`). Whether the SPDX identifier is
-  `GPL-3.0-only` or `GPL-3.0-or-later` is open (arc42 Q-1).
+- License: **GNU General Public License v3 or later** – SPDX identifier `GPL-3.0-or-later`
+  (`LICENSE` contains the GPL v3 text).
 - **Clean-room rule:** no source code, resources or assets are copied from Catima or other loyalty
   card apps. Catima is used only as a functional reference and its export format is implemented
   for compatibility (ADR-0004).

@@ -12,8 +12,8 @@ way to display content on/over the lock screen.
 ## Decision
 
 A **Quick-Settings tile** (Android `TileService`) opens a screen that is displayed over the lock
-screen (Activity with "show when locked"). The user can swipe between barcodes; favorites come
-first.
+screen (Activity with "show when locked"). Only cards the user has marked "show on lock screen"
+are displayed. The user can swipe between them; favorites come first.
 
 ## Implementation variants (Q-9)
 
@@ -27,7 +27,6 @@ first.
 
 - A small custom Capacitor plugin / Android component in Kotlin is required (accepted exception
   to the TypeScript preference).
-- Barcodes of the displayed cards are visible to anyone holding the device – the feature must be
-  opt-in, possibly per card.
+- Barcodes of marked cards are visible to anyone holding the device – hence opt-in per card.
 - Behaviour of tiles and lock-screen activities varies between Android versions and vendors; an
   early prototype on real devices is planned.
