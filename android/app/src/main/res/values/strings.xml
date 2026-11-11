@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MyCards</string>
+    <string name="title_activity_main">MyCards</string>
+    <string name="package_name">online.pieger.mycards</string>
+    <string name="custom_url_scheme">online.pieger.mycards</string>
+</resources>
