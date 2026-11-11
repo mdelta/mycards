@@ -32,15 +32,17 @@ Source: initial request by the product owner (2026-11-08).
 
 Remaining scope questions: see section 11.2.
 
-### 1.2 Quality Goals (to be prioritized – [OPEN Q-10])
+### 1.2 Quality Goals
 
-| Candidate quality goal | Motivation                                                                 |
-|------------------------|----------------------------------------------------------------------------|
-| Speed of presentation  | At the checkout the card must be on screen within a few seconds            |
-| Privacy                | Data never leaves the device unless the user exports it                    |
-| Data safety            | No loss of cards (app update, phone change) – via import/export            |
-| Maintainability        | Single developer, TypeScript-centric code base                             |
-| Offline capability     | Core features (show/scan card) work without network                        |
+[DECIDED] Priority in table order (1 = highest), PO 2026-11-09.
+
+| Priority | Quality goal   | Motivation                                                                 |
+|----------|----------------|----------------------------------------------------------------------------|
+| 1 | Speed of presentation  | At the checkout the card must be on screen within a few seconds            |
+| 2 | Privacy                | Data never leaves the device unless the user exports it                    |
+| 3 | Data safety            | No loss of cards (app update, phone change) – via import/export            |
+| 4 | Maintainability        | Single developer, TypeScript-centric code base                             |
+| 5 | Offline capability     | Core features (show/scan card) work without network                        |
 
 ### 1.3 Stakeholders
 
@@ -247,7 +249,7 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 
 ## 10. Quality Requirements
 
-*To be derived from section 1.2 once prioritized.* Example scenario: "From app start to barcode on
+*To be derived from the prioritized quality goals in section 1.2.* Example scenario: "From app start to barcode on
 screen for a pinned card: ≤ 2 s on a mid-range device."
 
 ---
@@ -274,7 +276,6 @@ Answered questions are removed and recorded as ADRs.
 
 | ID | Question |
 |----|----------|
-| Q-10 | Priority of quality goals (1.2) |
 | Q-14 | Release tooling: Gradle Play Publisher, fastlane supply, or a GitHub Action; which tracks get automatic uploads (internal only / production)? Release trigger (tag, manual)? |
 
 ---
