@@ -92,7 +92,7 @@ flowchart LR
 | Neighbour             | Interface                                                         | Status |
 |-----------------------|-------------------------------------------------------------------|--------|
 | Camera                | Native camera + Google ML Kit barcode scanning                      | [DECIDED] ADR-0010 |
-| Local storage         | SQLite + photo files in app sandbox                                 | [PROPOSAL] ADR-0003 |
+| Local storage         | SQLite + photo files in app sandbox                                 | [DECIDED] ADR-0003 |
 | File system           | Android Storage Access Framework / share sheet for import/export    | [PROPOSAL] ADR-0004 |
 | Google backup         | Android Auto Backup of app data to the user's Google account        | [DECIDED] ADR-0014 |
 | Map apps              | Android intent with search query, user's map app (Google Maps, Organic Maps, OsmAnd, …) | [DECIDED] ADR-0005 |
@@ -126,7 +126,7 @@ pure-TypeScript way on Android to render on/over the lock screen.
 |-------|---------|----------|
 | UI framework | Angular with Ionic Framework components first | [DECIDED] ADR-0002, ADR-0009 |
 | Barcode scanning | Google ML Kit | [DECIDED] ADR-0010 |
-| Persistence | SQLite plugin · key-value (Preferences) · JSON file in app sandbox | [PROPOSAL] SQLite for card data, photos as files in the app sandbox referenced from SQLite (ADR-0003) |
+| Persistence | SQLite plugin · key-value (Preferences) · JSON file in app sandbox | [DECIDED] SQLite for card data, photos as files in the app sandbox referenced from SQLite (ADR-0003) |
 | Barcode rendering | `bwip-js` (many formats incl. Aztec, PDF417, DataMatrix) · `zxing` | [PROPOSAL] `bwip-js`, renders offline (ADR-0017) |
 | Export format | User chooses: own format (ZIP, optional password) or Catima format; import replaces, no merge | [DECIDED] ADR-0004 |
 | Nearby shop search | Open external map app with search query – no location permission, no API key | [DECIDED] ADR-0005 |
@@ -164,7 +164,7 @@ flowchart TB
   UI --> Domain --> Infra
 ```
 
-Idea: domain logic is plain TypeScript with adapter interfaces, so it is unit-testable without a
+[DECIDED] Domain logic is plain TypeScript with adapter interfaces, so it is unit-testable without a
 device and independent of the chosen framework.
 
 ### 5.1 Domain model (draft, see ADR-0016)
@@ -229,7 +229,7 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 |-----|-------|--------|
 | [0001](adr/0001-app-technology-capacitor.md) | App technology: Capacitor | accepted |
 | [0002](adr/0002-ui-framework-angular.md) | UI framework: Angular | accepted |
-| [0003](adr/0003-persistence.md) | Persistence | proposed |
+| [0003](adr/0003-persistence.md) | Persistence: SQLite + photo files | accepted |
 | [0004](adr/0004-import-export-format.md) | Import/export: own ZIP format or Catima format | accepted |
 | [0005](adr/0005-shop-search-external-map-app.md) | Shop search via external map app | accepted |
 | [0006](adr/0006-lock-screen-quick-settings-tile.md) | Lock screen via Quick-Settings tile + native Activity | accepted |

@@ -1,6 +1,6 @@
 # ADR-0003: Persistence
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-08
 - arc42 reference: 4.2, 5.1
 
@@ -20,7 +20,7 @@ and photos (1:n, F-09).
 Photos: stored as files in the app's private storage (Filesystem plugin), referenced from the
 database – not as BLOBs.
 
-## Decision (proposal)
+## Decision
 
 SQLite for structured data; photos as files in the app sandbox. Access only through a repository
 interface in the domain layer.
