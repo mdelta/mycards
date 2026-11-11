@@ -39,7 +39,7 @@ Remaining scope questions: see section 11.2.
 | Priority | Quality goal   | Motivation                                                                 |
 |----------|----------------|----------------------------------------------------------------------------|
 | 1 | Speed of presentation  | At the checkout the card must be on screen within a few seconds            |
-| 2 | Privacy                | Data never leaves the device unless the user exports it                    |
+| 2 | Privacy                | No own backend; data leaves the device only via user export or Android Auto Backup (ADR-0014) |
 | 3 | Data safety            | No loss of cards (app update, phone change) – via import/export            |
 | 4 | Maintainability        | Single developer, TypeScript-centric code base                             |
 | 5 | Offline capability     | Core features (show/scan card) work without network                        |
