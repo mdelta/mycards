@@ -179,6 +179,23 @@ device and independent of the chosen framework.
 The exact Catima field list is verified against real Catima export files before implementation
 (ADR-0016).
 
+### 5.2 Source code structure
+
+The layers above map to folders under `src/app/`:
+
+| Folder | Layer | Content |
+|--------|-------|---------|
+| `domain/model/` | Domain | Entities and value types (ADR-0016, ADR-0017) |
+| `domain/ports/` | Domain | Adapter interfaces, e.g. `CardRepository` (ADR-0003) |
+| `domain/services/` | Domain | Framework-independent logic, e.g. card ordering |
+| `infrastructure/` | Platform adapters | Implementations of the ports (SQLite, scanner, files, maps); added with the first adapter |
+| `ui/pages/` | UI | Ionic pages (ADR-0009) |
+| `i18n/` | UI | Transloco loader; translations in `src/assets/i18n/` (ADR-0012) |
+
+ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Transloco nor the
+`ui/` or `infrastructure/` folders. The native Android project lives in `android/`
+(Capacitor, minSdk 34, ADR-0011).
+
 ---
 
 ## 6. Runtime View
@@ -198,6 +215,7 @@ The exact Catima field list is verified against real Catima export files before 
 
 *Draft.*
 
+- [DECIDED] Application ID: `de.orisian.apps.mycards` (cannot change after the first Play upload).
 - Artifact: Android App Bundle (AAB), signed with an upload key; Play App Signing.
 - Channels: internal testing → closed testing → production. (Google requires closed testing with a
   minimum number of testers for new personal developer accounts before production – verify current

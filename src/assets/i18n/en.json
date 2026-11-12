@@ -1,0 +1,8 @@
+{
+  "app": {
+    "title": "MyCards"
+  },
+  "cardList": {
+    "empty": "No cards yet."
+  }
+}
