@@ -215,6 +215,7 @@ ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Tran
 
 *Draft.*
 
+- [DECIDED] Application ID: `de.orisian.apps.mycards` (cannot change after the first Play upload).
 - Artifact: Android App Bundle (AAB), signed with an upload key; Play App Signing.
 - Channels: internal testing → closed testing → production. (Google requires closed testing with a
   minimum number of testers for new personal developer accounts before production – verify current

@@ -1,4 +1,4 @@
-package online.pieger.mycards;
+package de.orisian.apps.mycards;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'online.pieger.mycards',
+  appId: 'de.orisian.apps.mycards',
   appName: 'MyCards',
   webDir: 'www',
 };
