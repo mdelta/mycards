@@ -6,6 +6,9 @@ export interface SqlDatabase {
   execute(sql: string): Promise<void>;
   query<T>(sql: string, params?: SqlValue[]): Promise<T[]>;
   run(sql: string, params?: SqlValue[]): Promise<void>;
-  /** Runs `work` atomically; nested calls inside `work` use the same transaction. */
-  transaction<T>(work: () => Promise<T>): Promise<T>;
+  /**
+   * Runs `work` atomically. Inside `work`, use only `tx` (not the outer database): statements on
+   * `tx` belong to the transaction, and `tx.transaction` joins it.
+   */
+  transaction<T>(work: (tx: SqlDatabase) => Promise<T>): Promise<T>;
 }

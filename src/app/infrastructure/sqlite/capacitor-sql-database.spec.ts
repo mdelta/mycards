@@ -58,6 +58,55 @@ describe('CapacitorSqlDatabase', () => {
     expect(connection.calls.filter((c) => c.startsWith('query'))).toHaveLength(2);
   });
 
+  it('lets a transactional initializer finish before the first transaction (fresh database)', async () => {
+    const db = new CapacitorSqlDatabase(open, (init) => init.transaction((tx) => tx.execute('MIGRATE')));
+
+    await db.transaction((tx) => tx.run('SAVE'));
+
+    expect(connection.calls).toEqual([
+      'begin',
+      'execute MIGRATE tx=false',
+      'commit',
+      'persist',
+      'begin',
+      'run SAVE [] tx=false',
+      'commit',
+      'persist',
+    ]);
+  });
+
+  it('holds back concurrent requests until the initializer has finished', async () => {
+    let finishInit!: () => void;
+    const db = new CapacitorSqlDatabase(open, async (init) => {
+      await new Promise<void>((resolve) => (finishInit = resolve));
+      await init.execute('MIGRATE');
+    });
+
+    const first = db.query('SELECT 1');
+    await Promise.resolve();
+    const second = db.query('SELECT 2');
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(connection.calls).toEqual([]);
+
+    finishInit();
+    await Promise.all([first, second]);
+    expect(connection.calls[0]).toBe('execute MIGRATE tx=true');
+  });
+
+  it('retries opening after a failed open', async () => {
+    let fail = true;
+    const db = new CapacitorSqlDatabase(async () => {
+      if (fail) {
+        throw new Error('locked');
+      }
+      return opened;
+    });
+
+    await expect(db.query('SELECT 1')).rejects.toThrow('locked');
+    fail = false;
+    await expect(db.query('SELECT 1')).resolves.toEqual([]);
+  });
+
   it('returns query rows and treats missing values as empty', async () => {
     const db = new CapacitorSqlDatabase(open);
     connection.rows = [{ a: 1 }];
@@ -79,9 +128,9 @@ describe('CapacitorSqlDatabase', () => {
   it('commits a transaction and persists once', async () => {
     const db = new CapacitorSqlDatabase(open);
 
-    const result = await db.transaction(async () => {
-      await db.run('A');
-      await db.transaction(() => db.execute('B'));
+    const result = await db.transaction(async (tx) => {
+      await tx.run('A');
+      await tx.transaction((nested) => nested.execute('B'));
       return 42;
     });
 
@@ -93,8 +142,8 @@ describe('CapacitorSqlDatabase', () => {
     const db = new CapacitorSqlDatabase(open);
 
     await expect(
-      db.transaction(async () => {
-        await db.run('A');
+      db.transaction(async (tx) => {
+        await tx.run('A');
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');
@@ -102,22 +151,30 @@ describe('CapacitorSqlDatabase', () => {
     expect(connection.calls).toEqual(['begin', 'run A [] tx=false', 'rollback', 'persist']);
   });
 
-  it('serializes concurrent transactions', async () => {
+  it('never interleaves other operations with a running transaction', async () => {
     const db = new CapacitorSqlDatabase(open);
 
-    await Promise.all([
-      db.transaction(() => db.run('first')).catch(() => undefined),
-      db.transaction(() => db.run('second')),
+    const results = await Promise.allSettled([
+      db.transaction(async (tx) => {
+        await tx.run('first');
+        await new Promise((resolve) => setTimeout(resolve));
+        throw new Error('boom');
+      }),
+      db.transaction((tx) => tx.run('second')),
+      db.run('single'),
     ]);
 
+    expect(results.map((r) => r.status)).toEqual(['rejected', 'fulfilled', 'fulfilled']);
     expect(connection.calls).toEqual([
       'begin',
       'run first [] tx=false',
-      'commit',
+      'rollback',
       'persist',
       'begin',
       'run second [] tx=false',
       'commit',
+      'persist',
+      'run single [] tx=true',
       'persist',
     ]);
   });

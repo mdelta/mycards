@@ -28,14 +28,14 @@ export class SqlJsDatabase implements SqlDatabase {
     this.raw.run(sql, params);
   }
 
-  async transaction<T>(work: () => Promise<T>): Promise<T> {
+  async transaction<T>(work: (tx: SqlDatabase) => Promise<T>): Promise<T> {
     if (this.inTransaction) {
-      return work();
+      return work(this);
     }
     this.inTransaction = true;
     this.raw.exec('BEGIN');
     try {
-      const result = await work();
+      const result = await work(this);
       this.raw.exec('COMMIT');
       return result;
     } catch (error) {

@@ -66,9 +66,9 @@ export async function migrate(db: SqlDatabase, migrations: Migration[] = MIGRATI
   );
   const pending = migrations.filter((m) => m.version > (version ?? 0)).sort((a, b) => a.version - b.version);
   for (const migration of pending) {
-    await db.transaction(async () => {
-      await db.execute(migration.sql);
-      await db.run('INSERT INTO schema_migration (version) VALUES (?)', [migration.version]);
+    await db.transaction(async (tx) => {
+      await tx.execute(migration.sql);
+      await tx.run('INSERT INTO schema_migration (version) VALUES (?)', [migration.version]);
     });
   }
 }

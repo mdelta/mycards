@@ -71,25 +71,25 @@ export class SqliteCardRepository implements CardRepository {
   }
 
   save(card: Card): Promise<void> {
-    return this.db.transaction(async () => {
+    return this.db.transaction(async (tx) => {
       const row = toRow(card);
-      await this.db.run(
+      await tx.run(
         UPSERT,
         COLUMNS.map((column) => row[column]),
       );
-      await this.db.run('DELETE FROM card_tag WHERE card_id = ?', [card.id]);
+      await tx.run('DELETE FROM card_tag WHERE card_id = ?', [card.id]);
       for (const tagId of card.tagIds) {
-        await this.db.run('INSERT INTO card_tag (card_id, tag_id) VALUES (?, ?)', [card.id, tagId]);
+        await tx.run('INSERT INTO card_tag (card_id, tag_id) VALUES (?, ?)', [card.id, tagId]);
       }
     });
   }
 
   delete(id: string): Promise<void> {
-    return this.db.transaction(async () => {
+    return this.db.transaction(async (tx) => {
       for (const table of ['card_tag', 'website', 'photo']) {
-        await this.db.run(`DELETE FROM ${table} WHERE card_id = ?`, [id]);
+        await tx.run(`DELETE FROM ${table} WHERE card_id = ?`, [id]);
       }
-      await this.db.run('DELETE FROM card WHERE id = ?', [id]);
+      await tx.run('DELETE FROM card WHERE id = ?', [id]);
     });
   }
 
