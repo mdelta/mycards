@@ -11,7 +11,7 @@
 | TDD | Domain services, mappers, format readers/writers and validators are written test-first (red → green → refactor). UI and thin platform adapters are tested after the fact where TDD adds little. |
 | SOLID / separation of concerns | Layers from arc42 §5.2. The domain defines ports (interfaces); infrastructure implements them; UI only talks to domain services. Ports are bound to adapters with Angular `InjectionToken`s (dependency inversion), so tests can use in-memory fakes. One service per responsibility (e.g. `CardService`, `ExportService`, `CatimaMapper`). |
 | Thin UI | Pages are containers that call services; reusable components are presentational (inputs/outputs only). No business rules in templates or pages. |
-| Unit test coverage | Soft goal: ≥ 80 % line coverage. CI measures coverage with Vitest (`@vitest/coverage-v8`) and shows it in the job summary. **[DECIDE]** Should CI *fail* below a floor (e.g. 70 %) or only report? |
+| Unit test coverage | Soft goal: ≥ 80 % line coverage. CI measures coverage with Vitest (`@vitest/coverage-v8`) and shows it in the job summary. [DECIDED] CI only reports coverage and never fails because of it. |
 | Test pyramid | Many unit tests (Vitest), a few Playwright e2e flows against the web build, and a manual device checklist for native features (camera, lock screen, brightness). |
 | Definition of done per step | Tests written/updated, lint + coverage green in CI, arc42/ADR updated if a decision changed, PR cites arc42/ADR. |
 
