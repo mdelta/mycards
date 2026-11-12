@@ -7,6 +7,7 @@ Built with Capacitor, Angular and Ionic (TypeScript).
 
 Architecture (arc42): [docs/architecture/arc42.md](docs/architecture/arc42.md)
 Architecture decisions: [docs/architecture/adr/](docs/architecture/adr/)
+Implementation plan: [docs/implementation-plan.md](docs/implementation-plan.md)
 
 Every implementation step must reference the relevant arc42 section or ADR.
 
