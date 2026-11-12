@@ -89,8 +89,9 @@ presentation, privacy, data safety, maintainability, offline).
 
 ### Step 8 – Catima compatibility (F-11; ADR-0004, ADR-0007)
 
-- Clean-room: implemented from real Catima export files only. **[DECIDE]** The product owner
-  provides one or more sample Catima exports (with test data).
+- Clean-room: implemented from real Catima export files only. The observed format is described in
+  [formats/catima-export.md](formats/catima-export.md); tests use synthetic fixtures (the sample
+  contains personal data). A second sample covering the "not yet observed" items is needed.
 - Domain: `CatimaMapper` (both directions), documented field mapping.
 - Tests: import of sample files, export → re-import, unsupported fields reported.
 
