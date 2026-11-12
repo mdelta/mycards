@@ -1,0 +1,102 @@
+<ng-container *transloco="let t; prefix: 'cardEditor'">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/home" />
+      </ion-buttons>
+      <ion-title>{{ id() ? t('editTitle') : t('newTitle') }}</ion-title>
+      @if (!notFound()) {
+      <ion-buttons slot="end">
+        @if (id()) {
+        <ion-button color="danger" (click)="confirmDelete()">
+          <ion-icon slot="icon-only" name="trash" [attr.aria-label]="t('delete')" />
+        </ion-button>
+        }
+        <ion-button strong (click)="save()">{{ t('save') }}</ion-button>
+      </ion-buttons>
+      }
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content>
+    @if (notFound()) {
+    <ion-text color="medium"><p class="ion-padding">{{ t('notFound') }}</p></ion-text>
+    } @else {
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <ion-list>
+        <ion-item>
+          <ion-input
+            formControlName="storeName"
+            [label]="t('fields.storeName')"
+            labelPlacement="floating"
+            class="ion-touched"
+            [class.ion-invalid]="hasError('storeNameRequired')"
+            [errorText]="t('errors.storeNameRequired')"
+          />
+        </ion-item>
+        <ion-item>
+          <ion-input
+            formControlName="cardId"
+            [label]="t('fields.cardId')"
+            labelPlacement="floating"
+            class="ion-touched"
+            [class.ion-invalid]="hasError('cardIdRequired')"
+            [errorText]="t('errors.cardIdRequired')"
+          />
+        </ion-item>
+        <ion-item>
+          <ion-select formControlName="barcodeType" [label]="t('fields.barcodeType')" labelPlacement="floating">
+            <ion-select-option value="">{{ t('fields.barcodeTypeNone') }}</ion-select-option>
+            @for (type of barcodeTypes; track type) {
+            <ion-select-option [value]="type">{{ type }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+        <ion-item>
+          <ion-input formControlName="barcodeValue" [label]="t('fields.barcodeValue')" labelPlacement="floating" />
+        </ion-item>
+        <ion-item>
+          <ion-textarea formControlName="note" [label]="t('fields.note')" labelPlacement="floating" [autoGrow]="true" />
+        </ion-item>
+        <ion-item>
+          <ion-input formControlName="validFrom" type="date" [label]="t('fields.validFrom')" labelPlacement="stacked" />
+        </ion-item>
+        <ion-item>
+          <ion-input
+            formControlName="expiry"
+            type="date"
+            [label]="t('fields.expiry')"
+            labelPlacement="stacked"
+            class="ion-touched"
+            [class.ion-invalid]="hasError('expiryBeforeValidFrom')"
+            [errorText]="t('errors.expiryBeforeValidFrom')"
+          />
+        </ion-item>
+        <ion-item>
+          <ion-input
+            formControlName="balance"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            [label]="t('fields.balance')"
+            labelPlacement="floating"
+            class="ion-touched"
+            [class.ion-invalid]="hasError('balanceInvalid')"
+            [errorText]="t('errors.balanceInvalid')"
+          />
+        </ion-item>
+        <ion-item>
+          <ion-input formControlName="balanceType" [label]="t('fields.balanceType')" labelPlacement="floating" />
+        </ion-item>
+        <ion-item>
+          <ion-toggle formControlName="favorite">{{ t('fields.favorite') }}</ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle formControlName="showOnLockScreen">{{ t('fields.showOnLockScreen') }}</ion-toggle>
+        </ion-item>
+      </ion-list>
+      <button type="submit" hidden></button>
+    </form>
+    }
+  </ion-content>
+</ng-container>

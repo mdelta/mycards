@@ -1,0 +1,170 @@
+import type { OnInit } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+  AlertController,
+  IonBackButton,
+  IonButton,
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonList,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+  IonTextarea,
+  IonTitle,
+  IonToggle,
+  IonToolbar,
+  NavController,
+} from '@ionic/angular';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { addIcons } from 'ionicons';
+import { trash } from 'ionicons/icons';
+
+import type { BarcodeType } from '../../../domain/model/barcode-type';
+import { BARCODE_TYPES } from '../../../domain/model/barcode-type';
+import type { Card } from '../../../domain/model/card';
+import type { CardDraft, CardValidationError } from '../../../domain/services/card-draft';
+import { CardService, InvalidCardError } from '../../../domain/services/card-service';
+
+/** Manual card creation and editing (F-01, F-10). Validation rules live in `CardService`. */
+@Component({
+  selector: 'app-card-editor',
+  templateUrl: 'card-editor.page.html',
+  imports: [
+    IonBackButton,
+    IonButton,
+    IonButtons,
+    IonContent,
+    IonHeader,
+    IonIcon,
+    IonInput,
+    IonItem,
+    IonList,
+    IonSelect,
+    IonSelectOption,
+    IonText,
+    IonTextarea,
+    IonTitle,
+    IonToggle,
+    IonToolbar,
+    ReactiveFormsModule,
+    TranslocoDirective,
+  ],
+})
+export class CardEditorPage implements OnInit {
+  private readonly cardService = inject(CardService);
+  private readonly nav = inject(NavController);
+  private readonly alerts = inject(AlertController);
+  private readonly transloco = inject(TranslocoService);
+
+  /** Route parameter; undefined when creating a new card. */
+  readonly id = input<string>();
+
+  readonly barcodeTypes = BARCODE_TYPES;
+  readonly errors = signal<CardValidationError[]>([]);
+  readonly notFound = signal(false);
+  readonly form = inject(NonNullableFormBuilder).group({
+    storeName: '',
+    cardId: '',
+    barcodeType: '' as BarcodeType | '',
+    barcodeValue: '',
+    note: '',
+    validFrom: '',
+    expiry: '',
+    balance: '' as string | number | null,
+    balanceType: '',
+    favorite: false,
+    showOnLockScreen: false,
+  });
+
+  constructor() {
+    addIcons({ trash });
+  }
+
+  async ngOnInit(): Promise<void> {
+    const id = this.id();
+    if (!id) {
+      return;
+    }
+    const card = await this.cardService.get(id);
+    if (card) {
+      this.form.setValue(toFormValue(card));
+    } else {
+      this.notFound.set(true);
+    }
+  }
+
+  hasError(error: CardValidationError): boolean {
+    return this.errors().includes(error);
+  }
+
+  async save(): Promise<void> {
+    const draft = toDraft(this.form.getRawValue());
+    const id = this.id();
+    try {
+      await (id ? this.cardService.update(id, draft) : this.cardService.create(draft));
+    } catch (error) {
+      if (error instanceof InvalidCardError) {
+        this.errors.set(error.errors);
+        return;
+      }
+      throw error;
+    }
+    await this.nav.navigateBack('/home');
+  }
+
+  async confirmDelete(): Promise<void> {
+    const id = this.id();
+    if (!id) {
+      return;
+    }
+    const t = (key: string, params?: Record<string, string>): string =>
+      this.transloco.translate(`cardEditor.${key}`, params);
+    const alert = await this.alerts.create({
+      header: t('deleteConfirm.header'),
+      message: t('deleteConfirm.message', { storeName: this.form.controls.storeName.value }),
+      buttons: [
+        { text: t('cancel'), role: 'cancel' },
+        { text: t('delete'), role: 'destructive' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role === 'destructive') {
+      await this.cardService.delete(id);
+      await this.nav.navigateBack('/home');
+    }
+  }
+}
+
+type FormValue = CardEditorPage['form']['value'] & {};
+
+function toFormValue(card: Card): Required<FormValue> {
+  return {
+    storeName: card.storeName,
+    cardId: card.cardId,
+    barcodeType: card.barcodeType ?? '',
+    barcodeValue: card.barcodeValue ?? '',
+    note: card.note ?? '',
+    validFrom: card.validFrom ?? '',
+    expiry: card.expiry ?? '',
+    balance: card.balance ?? '',
+    balanceType: card.balanceType ?? '',
+    favorite: card.favorite,
+    showOnLockScreen: card.showOnLockScreen,
+  };
+}
+
+function toDraft(value: Required<FormValue>): CardDraft {
+  const { barcodeType, balance, ...rest } = value;
+  return {
+    ...rest,
+    barcodeType: barcodeType || undefined,
+    balance: balance === '' || balance === null ? undefined : Number(balance),
+  };
+}

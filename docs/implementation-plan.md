@@ -36,8 +36,9 @@ presentation, privacy, data safety, maintainability, offline).
 
 ### Step 2 – Storage and manual cards (F-01, F-04, F-10, F-12; ADR-0003, ADR-0016)
 
-- Domain: `CardService` (create/update/delete, validation: store name and card ID required, barcode
-  value valid for the barcode type), `Clock`/`IdGenerator` ports for deterministic tests.
+- Domain: `CardService` (create/update/delete, validation: store name and card ID required,
+  balance not negative, expiry not before valid-from), `Clock`/`IdGenerator` ports for
+  deterministic tests. Barcode value validation per type moved to step 3, together with rendering.
 - Infrastructure: SQLite repository with a versioned schema and migrations for the full ADR-0016
   model (cards, tags, websites, photo references), so later steps add UI, not tables.
 - UI: card list (favorites first, search by store name), card editor (Ionic forms), delete with
