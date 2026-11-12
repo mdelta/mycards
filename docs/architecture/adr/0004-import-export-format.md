@@ -13,8 +13,8 @@ Users of Catima should be able to switch to MyCards.
 
 - On export the user **chooses the format**: own format or Catima format. Import supports both.
 - **Own format:** a ZIP file containing a versioned JSON document with all data plus the photo
-  files. Optional password. [Proposal] Encryption via ZIP AES-256 (not the weak legacy ZipCrypto),
-  e.g. with the `@zip.js/zip.js` library – to be confirmed in implementation.
+  files. Optional password. [DECIDED] Encryption via ZIP AES-256 (not the weak legacy ZipCrypto),
+  with the `@zip.js/zip.js` library.
 - **Catima format:** implemented from the observed file format only – no Catima code is used
   (ADR-0007). Fields without a counterpart are dropped or mapped; the mapping is documented.
 - **Import, no merge logic:**

@@ -43,7 +43,7 @@ presentation, privacy, data safety, maintainability, offline).
 - UI: card list (favorites first, search by store name), card editor (Ionic forms), delete with
   confirmation, empty state.
 - e2e: create → list → edit → delete in the web build.
-- **[DECIDE]** SQLite plugin: `@capacitor-community/sqlite` (proposal; needs the `jeep-sqlite`
+- [DECIDED] SQLite plugin: `@capacitor-community/sqlite` (needs the `jeep-sqlite`
   WebAssembly fallback for browser/e2e).
 
 ### Step 3 – Card presentation (F-03, quality goal 1; ADR-0017)
@@ -55,14 +55,14 @@ presentation, privacy, data safety, maintainability, offline).
 - Performance check against the §10 scenario (app start → barcode ≤ 2 s); first quality scenario
   written into arc42 §10.
 - Tests: render round-trip for every barcode type (ADR-0017 consequence).
-- **[DECIDE]** `bwip-js` (proposal in ADR-0017); plugins for brightness / keep-awake.
+- [DECIDED] `bwip-js` (ADR-0017). **[DECIDE]** plugins for brightness / keep-awake.
 
 ### Step 4 – Camera scanning (F-02, F-13; ADR-0010, ADR-0017)
 
 - Infrastructure: ML Kit scanner adapter; mapping ML Kit formats → `BarcodeType`.
 - UI: scan button → camera → editor pre-filled with value and type; permission denied handling.
 - Final check of the supported barcode list against the plugin; ADR-0017 updated.
-- **[DECIDE]** Plugin `@capacitor-mlkit/barcode-scanning` (proposal).
+- [DECIDED] Plugin `@capacitor-mlkit/barcode-scanning`.
 
 ### Step 5 – Export and import, own format (F-05, F-11, quality goal 3; ADR-0004)
 
@@ -71,7 +71,7 @@ presentation, privacy, data safety, maintainability, offline).
 - Domain: `ExportService` / `ImportService`, overwrite-by-id import and "clean import" setting.
 - Infrastructure: ZIP library adapter, Android file picker / share sheet adapter.
 - Tests: export → import round trip, wrong password, newer format version, clean vs. normal import.
-- **[DECIDE]** ZIP library (`@zip.js/zip.js` proposed in ADR-0004); file picker plugin.
+- [DECIDED] ZIP library `@zip.js/zip.js` with AES-256 (ADR-0004). **[DECIDE]** file picker plugin.
 
 ### Step 6 – Card details: tags, color, icon, links, shop search (F-06, F-07, F-12; ADR-0005)
 
@@ -85,7 +85,7 @@ presentation, privacy, data safety, maintainability, offline).
 - Take/choose photos (front/back/other), store as compressed files in the app sandbox,
   reference from SQLite, include in export (Step 5 format already has the folder).
 - Risk mitigation for the Auto Backup quota (arc42 §11.1): size limit/compression.
-- **[DECIDE]** Camera plugin (`@capacitor/camera` proposed); max photo size.
+- [DECIDED] Camera plugin `@capacitor/camera`. **[DECIDE]** max photo size.
 
 ### Step 8 – Catima compatibility (F-11; ADR-0004, ADR-0007)
 
