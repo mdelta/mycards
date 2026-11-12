@@ -13,7 +13,7 @@
 - **All barcode types** are supported – i.e. every type ML Kit can scan. According to ML Kit's
   documentation these are: Codabar, Code 39, Code 93, Code 128, EAN-8, EAN-13, ITF, UPC-A, UPC-E,
   Aztec, Data Matrix, PDF417, QR Code (verify against the plugin version used).
-- [Proposal] Rendering with `bwip-js`, which supports all types above.
+- [DECIDED] Rendering with `bwip-js`, which supports all types above.
 
 ## Consequences
 

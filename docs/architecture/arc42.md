@@ -234,7 +234,7 @@ ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Tran
 - Error handling, logging (no remote telemetry?)
 - Internationalization: English only at first, all UI texts externalized for later translation (ADR-0012)
 - Accessibility, dark mode
-- Testing strategy (unit tests for domain, E2E on emulator)
+- Testing strategy and development practices (TDD, SOLID, ≥ 80 % unit line coverage as soft goal): see [implementation plan](../implementation-plan.md) §1
 - Android Auto Backup enabled (ADR-0014); regenerable files (e.g. lock-screen images) excluded
 
 ---
