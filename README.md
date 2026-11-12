@@ -20,6 +20,7 @@ npm ci
 npm start                   # web dev server
 npm run lint                # ESLint + Prettier
 npm test                    # unit (Vitest) and e2e (Playwright) tests
+npm run test:coverage       # unit tests with coverage report in coverage/app/ (goal: 80 % lines)
 npm run android:build:debug # debug APK in android/app/build/outputs/apk/debug/
 ```
 

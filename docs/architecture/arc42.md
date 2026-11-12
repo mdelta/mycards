@@ -192,6 +192,8 @@ The layers above map to folders under `src/app/`:
 | `ui/pages/` | UI | Ionic pages (ADR-0009) |
 | `i18n/` | UI | Transloco loader; translations in `src/assets/i18n/` (ADR-0012) |
 
+Test helpers shared by unit tests (data builders, in-memory port fakes) live in `src/testing/`.
+
 ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Transloco nor the
 `ui/` or `infrastructure/` folders. The native Android project lives in `android/`
 (Capacitor, minSdk 34, ADR-0011).
