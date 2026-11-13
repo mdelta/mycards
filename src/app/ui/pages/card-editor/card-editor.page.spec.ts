@@ -90,9 +90,29 @@ describe('CardEditorPage', () => {
 
       expect(page.hasError('storeNameRequired')).toBe(true);
       expect(page.hasError('cardIdRequired')).toBe(true);
-      expect(fixture.nativeElement.querySelectorAll('ion-input.ion-invalid')).toHaveLength(2);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      expect(fixture.nativeElement.querySelectorAll('ion-input.ion-invalid.ion-touched')).toHaveLength(2);
       expect(await repository.findAll()).toEqual([]);
       expect(nav.navigateBack).not.toHaveBeenCalled();
+    });
+
+    it('marks the balance field invalid and clears errors that are fixed on the next save', async () => {
+      page.form.patchValue({ storeName: 'Store', cardId: '1', balance: -1 });
+      await page.save();
+      fixture.detectChanges();
+
+      expect(page.hasError('balanceInvalid')).toBe(true);
+      expect(page.form.controls.balance.touched).toBe(true);
+      expect(page.hasError('storeNameRequired')).toBe(false);
+
+      page.form.controls.storeName.setValue('');
+      await page.save();
+
+      expect(page.hasError('storeNameRequired')).toBe(true);
+      expect(page.hasError('balanceInvalid')).toBe(true);
+
+      page.form.controls.balance.setValue(0);
+      expect(page.hasError('balanceInvalid')).toBe(false);
     });
 
     it('does nothing on delete', async () => {

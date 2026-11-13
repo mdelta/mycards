@@ -35,6 +35,10 @@ test('creates, lists, searches, edits and deletes cards', async ({ page }) => {
 
   await cardNames(page).filter({ hasText: 'Bakery' }).click();
   await expect(page.getByText('Edit card')).toBeVisible();
+  await page.getByLabel('Balance', { exact: true }).fill('-1');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Balance must not be negative.')).toBeVisible();
+  await page.getByLabel('Balance', { exact: true }).fill('');
   await page.getByLabel('Store name', { exact: true }).fill('Bakery Müller');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(cardNames(page)).toHaveText(['Pharmacy', 'Bakery Müller']);

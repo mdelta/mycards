@@ -29,8 +29,6 @@
             formControlName="storeName"
             [label]="t('fields.storeName')"
             labelPlacement="floating"
-            class="ion-touched"
-            [class.ion-invalid]="hasError('storeNameRequired')"
             [errorText]="t('errors.storeNameRequired')"
           />
         </ion-item>
@@ -39,8 +37,6 @@
             formControlName="cardId"
             [label]="t('fields.cardId')"
             labelPlacement="floating"
-            class="ion-touched"
-            [class.ion-invalid]="hasError('cardIdRequired')"
             [errorText]="t('errors.cardIdRequired')"
           />
         </ion-item>
@@ -67,8 +63,6 @@
             type="date"
             [label]="t('fields.expiry')"
             labelPlacement="stacked"
-            class="ion-touched"
-            [class.ion-invalid]="hasError('expiryBeforeValidFrom')"
             [errorText]="t('errors.expiryBeforeValidFrom')"
           />
         </ion-item>
@@ -80,8 +74,6 @@
             min="0"
             [label]="t('fields.balance')"
             labelPlacement="floating"
-            class="ion-touched"
-            [class.ion-invalid]="hasError('balanceInvalid')"
             [errorText]="t('errors.balanceInvalid')"
           />
         </ion-item>

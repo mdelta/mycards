@@ -66,7 +66,6 @@ export class CardEditorPage implements OnInit {
   readonly id = input<string>();
 
   readonly barcodeTypes = BARCODE_TYPES;
-  readonly errors = signal<CardValidationError[]>([]);
   readonly notFound = signal(false);
   readonly form = inject(NonNullableFormBuilder).group({
     storeName: '',
@@ -100,7 +99,7 @@ export class CardEditorPage implements OnInit {
   }
 
   hasError(error: CardValidationError): boolean {
-    return this.errors().includes(error);
+    return this.form.controls[ERROR_FIELDS[error]].hasError(error);
   }
 
   async save(): Promise<void> {
@@ -110,12 +109,27 @@ export class CardEditorPage implements OnInit {
       await (id ? this.cardService.update(id, draft) : this.cardService.create(draft));
     } catch (error) {
       if (error instanceof InvalidCardError) {
-        this.errors.set(error.errors);
+        this.showErrors(error.errors);
         return;
       }
       throw error;
     }
     await this.nav.navigateBack('/home');
+  }
+
+  /**
+   * Puts domain errors on their form controls, so Ionic shows them: it derives `ion-invalid` from the
+   * control status and would overwrite a manually set class. Editing a field clears its error.
+   */
+  private showErrors(errors: CardValidationError[]): void {
+    for (const control of Object.values(this.form.controls)) {
+      control.setErrors(null);
+    }
+    for (const error of errors) {
+      const control = this.form.controls[ERROR_FIELDS[error]];
+      control.setErrors({ ...control.errors, [error]: true });
+      control.markAsTouched();
+    }
   }
 
   async confirmDelete(): Promise<void> {
@@ -143,6 +157,13 @@ export class CardEditorPage implements OnInit {
 }
 
 type FormValue = CardEditorPage['form']['value'] & {};
+
+const ERROR_FIELDS: Record<CardValidationError, keyof FormValue> = {
+  storeNameRequired: 'storeName',
+  cardIdRequired: 'cardId',
+  balanceInvalid: 'balance',
+  expiryBeforeValidFrom: 'expiry',
+};
 
 function toFormValue(card: Card): Required<FormValue> {
   return {
