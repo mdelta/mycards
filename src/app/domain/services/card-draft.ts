@@ -1,5 +1,7 @@
 import type { Card } from '../model/card';
 
+import { barcodeValueOf, isValidBarcodeValue } from './barcode-value';
+
 /** Fields the user edits directly; system fields (id, timestamps) are managed by `CardService`. */
 export type CardDraft = Partial<
   Pick<
@@ -18,7 +20,8 @@ export type CardDraft = Partial<
   >
 >;
 
-export type CardValidationError = 'storeNameRequired' | 'cardIdRequired' | 'balanceInvalid' | 'expiryBeforeValidFrom';
+export type CardValidationError =
+  'storeNameRequired' | 'cardIdRequired' | 'barcodeValueInvalid' | 'balanceInvalid' | 'expiryBeforeValidFrom';
 
 const OPTIONAL_TEXT_FIELDS = ['barcodeValue', 'note', 'validFrom', 'expiry', 'balanceType'] as const;
 
@@ -49,6 +52,11 @@ export function validateCardDraft(draft: CardDraft): CardValidationError[] {
   }
   if (!draft.cardId?.trim()) {
     errors.push('cardIdRequired');
+  } else if (
+    draft.barcodeType &&
+    !isValidBarcodeValue(draft.barcodeType, barcodeValueOf({ ...draft, cardId: draft.cardId }))
+  ) {
+    errors.push('barcodeValueInvalid');
   }
   if (draft.balance !== undefined && !(Number.isFinite(draft.balance) && draft.balance >= 0)) {
     errors.push('balanceInvalid');

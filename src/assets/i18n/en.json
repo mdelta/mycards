@@ -38,8 +38,20 @@
     "errors": {
       "storeNameRequired": "Store name is required.",
       "cardIdRequired": "Card ID is required.",
+      "barcodeValueInvalid": "Not a valid value for barcode type {{ type }}.",
       "balanceInvalid": "Balance must not be negative.",
       "expiryBeforeValidFrom": "Expiry date must not be before the valid-from date."
     }
+  },
+  "cardDetail": {
+    "edit": "Edit",
+    "notFound": "This card does not exist.",
+    "barcodeAlt": "Barcode of {{ storeName }}",
+    "noBarcode": "No barcode type set. Show the card ID at the checkout.",
+    "barcodeError": "This barcode cannot be displayed. Check the barcode type and value.",
+    "balance": "Balance",
+    "validFrom": "Valid from",
+    "expiry": "Expiry date",
+    "note": "Note"
   }
 }

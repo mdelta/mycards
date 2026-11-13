@@ -99,7 +99,7 @@ export class CardEditorPage implements OnInit {
   }
 
   hasError(error: CardValidationError): boolean {
-    return this.form.controls[ERROR_FIELDS[error]].hasError(error);
+    return Object.values(this.form.controls).some((control) => control.hasError(error));
   }
 
   async save(): Promise<void> {
@@ -114,7 +114,7 @@ export class CardEditorPage implements OnInit {
       }
       throw error;
     }
-    await this.nav.navigateBack('/home');
+    await (id ? this.nav.navigateBack(['/cards', id]) : this.nav.navigateBack('/home'));
   }
 
   /**
@@ -126,10 +126,17 @@ export class CardEditorPage implements OnInit {
       control.setErrors(null);
     }
     for (const error of errors) {
-      const control = this.form.controls[ERROR_FIELDS[error]];
+      const control = this.form.controls[this.fieldFor(error)];
       control.setErrors({ ...control.errors, [error]: true });
       control.markAsTouched();
     }
+  }
+
+  private fieldFor(error: CardValidationError): keyof FormValue {
+    if (error === 'barcodeValueInvalid') {
+      return this.form.controls.barcodeValue.value.trim() ? 'barcodeValue' : 'cardId';
+    }
+    return ERROR_FIELDS[error];
   }
 
   async confirmDelete(): Promise<void> {
@@ -158,7 +165,7 @@ export class CardEditorPage implements OnInit {
 
 type FormValue = CardEditorPage['form']['value'] & {};
 
-const ERROR_FIELDS: Record<CardValidationError, keyof FormValue> = {
+const ERROR_FIELDS: Record<Exclude<CardValidationError, 'barcodeValueInvalid'>, keyof FormValue> = {
   storeNameRequired: 'storeName',
   cardIdRequired: 'cardId',
   balanceInvalid: 'balance',

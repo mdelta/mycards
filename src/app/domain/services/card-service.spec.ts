@@ -35,13 +35,13 @@ describe('CardService', () => {
 
   describe('create', () => {
     it('stores a normalized card with id, defaults and timestamps', async () => {
-      const card = await service.create({ storeName: ' Store ', cardId: '123', barcodeType: 'EAN_13' });
+      const card = await service.create({ storeName: ' Store ', cardId: '123', barcodeType: 'QR_CODE' });
 
       expect(card).toEqual({
         id: 'id-1',
         storeName: 'Store',
         cardId: '123',
-        barcodeType: 'EAN_13',
+        barcodeType: 'QR_CODE',
         favorite: false,
         archived: false,
         showOnLockScreen: false,
@@ -88,5 +88,18 @@ describe('CardService', () => {
     expect((await service.get('a'))?.id).toBe('a');
     await service.delete('a');
     expect(await service.get('a')).toBeUndefined();
+  });
+
+  it('records the last use without validating or touching updatedAt', async () => {
+    await repository.save(aCard({ id: 'a', cardId: 'not-an-ean', barcodeType: 'EAN_13' }));
+
+    await service.markUsed('a');
+    await service.markUsed('missing');
+
+    expect(await repository.findById('a')).toMatchObject({
+      lastUsedAt: NOW,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(await repository.findAll()).toHaveLength(1);
   });
 });

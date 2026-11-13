@@ -1,0 +1,66 @@
+<ng-container *transloco="let t; prefix: 'cardDetail'">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/home" />
+      </ion-buttons>
+      <ion-title>{{ card()?.storeName }}</ion-title>
+      @if (card(); as card) {
+      <ion-buttons slot="end">
+        <ion-button [routerLink]="['/cards', card.id, 'edit']" [attr.aria-label]="t('edit')">
+          <ion-icon slot="icon-only" name="create-outline" />
+        </ion-button>
+      </ion-buttons>
+      }
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content class="ion-padding">
+    @if (card(); as card) {
+    <div class="presentation" data-testid="presentation">
+      @switch (barcode().kind) { @case ('image') {
+      <img [src]="$any(barcode()).url" [alt]="t('barcodeAlt', { storeName: card.storeName })" />
+      } @case ('error') {
+      <p class="hint">{{ t('barcodeError') }}</p>
+      } @case ('none') {
+      <p class="hint">{{ t('noBarcode') }}</p>
+      } }
+      <p class="card-id" data-testid="card-id">{{ card.cardId }}</p>
+    </div>
+
+    <ion-list>
+      @if (card.balance !== undefined) {
+      <ion-item>
+        <ion-label>
+          <p>{{ t('balance') }}</p>
+          <h2>{{ card.balance }} {{ card.balanceType }}</h2>
+        </ion-label>
+      </ion-item>
+      } @if (card.validFrom) {
+      <ion-item>
+        <ion-label>
+          <p>{{ t('validFrom') }}</p>
+          <h2>{{ card.validFrom }}</h2>
+        </ion-label>
+      </ion-item>
+      } @if (card.expiry) {
+      <ion-item>
+        <ion-label>
+          <p>{{ t('expiry') }}</p>
+          <h2>{{ card.expiry }}</h2>
+        </ion-label>
+      </ion-item>
+      } @if (card.note) {
+      <ion-item>
+        <ion-label class="ion-text-wrap">
+          <p>{{ t('note') }}</p>
+          <h2>{{ card.note }}</h2>
+        </ion-label>
+      </ion-item>
+      }
+    </ion-list>
+    } @else if (loaded()) {
+    <ion-text color="medium"><p>{{ t('notFound') }}</p></ion-text>
+    }
+  </ion-content>
+</ng-container>

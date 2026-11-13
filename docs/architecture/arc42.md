@@ -127,7 +127,7 @@ pure-TypeScript way on Android to render on/over the lock screen.
 | UI framework | Angular with Ionic Framework components first | [DECIDED] ADR-0002, ADR-0009 |
 | Barcode scanning | Google ML Kit | [DECIDED] ADR-0010 |
 | Persistence | SQLite plugin · key-value (Preferences) · JSON file in app sandbox | [DECIDED] SQLite for card data, photos as files in the app sandbox referenced from SQLite (ADR-0003) |
-| Barcode rendering | `bwip-js` (many formats incl. Aztec, PDF417, DataMatrix) · `zxing` | [PROPOSAL] `bwip-js`, renders offline (ADR-0017) |
+| Barcode rendering | `bwip-js` (many formats incl. Aztec, PDF417, DataMatrix) · `zxing` | [DECIDED] `bwip-js`, renders offline (ADR-0017) |
 | Export format | User chooses: own format (ZIP, optional password) or Catima format; import replaces, no merge | [DECIDED] ADR-0004 |
 | Nearby shop search | Open external map app with search query – no location permission, no API key | [DECIDED] ADR-0005 |
 | Lock-screen display | Quick-Settings tile → separate native Activity with pre-rendered barcode images, marked cards only, swipe, favorites first | [DECIDED] ADR-0006 |
@@ -152,11 +152,14 @@ flowchart TB
     CardService
     ImportExport[Import/Export service]
     ShopLocator[Shop locator]
-    BarcodeRenderer
+    BarcodeRenderer[BarcodeRenderer port]
+    PresentationMode[PresentationMode port]
   end
   subgraph Infra[Platform adapters]
     Repo[Card repository - storage]
     CameraScan[Barcode scanner adapter]
+    Bwip[bwip-js barcode renderer]
+    Screen[Brightness / keep-awake adapter]
     FileAdapter[File / share adapter]
     MapAdapter[Map / URL launcher]
     LockScreen[Lock-screen adapter - native]
@@ -213,11 +216,35 @@ ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Tran
 *To be detailed after decisions.* Planned scenarios:
 
 1. Add card by scanning
-2. Show card at checkout (incl. max brightness / keep screen on / orientation)
+2. Show card at checkout – see 6.1
 3. Export all data → file / share target
 4. Import data (merge vs. replace, duplicates)
 5. Find nearby shop → open map
 6. Show card on lock screen (optional)
+
+### 6.1 Show card at checkout
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant List as Card list
+  participant Detail as Card detail page
+  participant Svc as CardService
+  participant PM as PresentationMode
+  participant R as BarcodeRenderer
+  User->>List: tap card
+  List->>Detail: navigate /cards/:id
+  Detail->>PM: enter() (max brightness, keep screen on)
+  Detail->>Svc: get(id)
+  Detail->>R: toSvg(type, value)
+  Detail-->>User: barcode + card ID
+  Detail->>Svc: markUsed(id) (lastUsedAt, in background)
+  User->>Detail: leave
+  Detail->>PM: exit() (user brightness, allow sleep)
+```
+
+Editing is a separate action on the detail page (`/cards/:id/edit`). A card without barcode type
+shows only the card ID; a stored value that cannot be encoded shows a hint instead of a barcode.
 
 ---
 
@@ -277,8 +304,11 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 
 ## 10. Quality Requirements
 
-*To be derived from the prioritized quality goals in section 1.2.* Example scenario: "From app start to barcode on
-screen for a pinned card: ≤ 2 s on a mid-range device."
+Scenarios derived from the prioritized quality goals in section 1.2.
+
+| ID | Quality goal | Scenario | Measure |
+|----|--------------|----------|---------|
+| QS-1 | 1 – Speed of barcode presentation | The user cold-starts the app and taps a card in the list (favorites are at the top). | Barcode readable on screen, at maximum brightness, ≤ 2 s after tapping the launcher icon on a mid-range device (Android 14). Rendering is local (`bwip-js`), with no network access. |
 
 ---
 
