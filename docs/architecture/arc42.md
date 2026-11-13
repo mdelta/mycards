@@ -188,11 +188,19 @@ The layers above map to folders under `src/app/`:
 | `domain/model/` | Domain | Entities and value types (ADR-0016, ADR-0017) |
 | `domain/ports/` | Domain | Adapter interfaces, e.g. `CardRepository` (ADR-0003) |
 | `domain/services/` | Domain | Framework-independent logic, e.g. card ordering |
-| `infrastructure/` | Platform adapters | Implementations of the ports (SQLite, scanner, files, maps); added with the first adapter |
+| `infrastructure/` | Platform adapters | Implementations of the ports (SQLite, scanner, files, maps); `providers.ts` is the composition root that wires domain services to adapters |
 | `ui/pages/` | UI | Ionic pages (ADR-0009) |
 | `i18n/` | UI | Transloco loader; translations in `src/assets/i18n/` (ADR-0012) |
 
 Test helpers shared by unit tests (data builders, in-memory port fakes) live in `src/testing/`.
+SQLite adapters are tested against real SQL with an in-memory `sql.js` database
+(`src/testing/sql-js-database.ts`).
+
+Persistence (ADR-0003): the schema is versioned in `infrastructure/sqlite/migrations.ts`
+(table `schema_migration`); released migrations are never edited, only appended. In the browser
+(dev server, e2e) the Capacitor SQLite plugin uses `jeep-sqlite`, which stores the database in
+IndexedDB and loads `assets/sql-wasm.wasm` from the `sql.js` package. `sql.js` is pinned to the
+version bundled by `jeep-sqlite` (1.11.0), because the WebAssembly file must match it.
 
 ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Transloco nor the
 `ui/` or `infrastructure/` folders. The native Android project lives in `android/`

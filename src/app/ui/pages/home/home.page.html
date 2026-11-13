@@ -3,11 +3,41 @@
     <ion-toolbar>
       <ion-title>{{ t('app.title') }}</ion-title>
     </ion-toolbar>
+    @if (cards().length) {
+    <ion-toolbar>
+      <ion-searchbar [placeholder]="t('cardList.search')" [value]="query()" (ionInput)="onSearch($event)" />
+    </ion-toolbar>
+    }
   </ion-header>
 
   <ion-content [fullscreen]="true">
+    @if (loaded() && !cards().length) {
     <div id="container">
       <p>{{ t('cardList.empty') }}</p>
+      <p>{{ t('cardList.emptyHint') }}</p>
     </div>
+    } @else {
+    <ion-list>
+      @for (card of visibleCards(); track card.id) {
+      <ion-item [routerLink]="['/cards', card.id, 'edit']" [detail]="true" data-testid="card-item">
+        <ion-label>
+          <h2>{{ card.storeName }}</h2>
+          <p>{{ card.cardId }}</p>
+        </ion-label>
+        @if (card.favorite) {
+        <ion-icon slot="end" name="star" color="warning" [attr.aria-label]="t('cardList.favorite')" />
+        }
+      </ion-item>
+      } @empty {
+      <p class="no-match">{{ t('cardList.noMatch') }}</p>
+      }
+    </ion-list>
+    }
+
+    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab-button routerLink="/cards/new">
+        <ion-icon name="add" [attr.aria-label]="t('cardList.add')" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-content>
 </ng-container>

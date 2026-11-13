@@ -3,6 +3,43 @@
     "title": "MyCards"
   },
   "cardList": {
-    "empty": "No cards yet."
+    "empty": "No cards yet.",
+    "emptyHint": "Tap + to add your first card.",
+    "noMatch": "No cards match your search.",
+    "search": "Search cards",
+    "add": "Add card",
+    "favorite": "Favorite"
+  },
+  "cardEditor": {
+    "newTitle": "New card",
+    "editTitle": "Edit card",
+    "save": "Save",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "notFound": "This card does not exist.",
+    "deleteConfirm": {
+      "header": "Delete card?",
+      "message": "\"{{ storeName }}\" will be deleted permanently."
+    },
+    "fields": {
+      "storeName": "Store name",
+      "cardId": "Card ID",
+      "barcodeType": "Barcode type",
+      "barcodeTypeNone": "None",
+      "barcodeValue": "Barcode value (if different from card ID)",
+      "note": "Note",
+      "validFrom": "Valid from",
+      "expiry": "Expiry date",
+      "balance": "Balance",
+      "balanceType": "Balance unit (e.g. EUR, points)",
+      "favorite": "Favorite",
+      "showOnLockScreen": "Show on lock screen"
+    },
+    "errors": {
+      "storeNameRequired": "Store name is required.",
+      "cardIdRequired": "Card ID is required.",
+      "balanceInvalid": "Balance must not be negative.",
+      "expiryBeforeValidFrom": "Expiry date must not be before the valid-from date."
+    }
   }
 }
