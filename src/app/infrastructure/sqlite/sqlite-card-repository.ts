@@ -84,6 +84,10 @@ export class SqliteCardRepository implements CardRepository {
     });
   }
 
+  async updateLastUsed(id: string, lastUsedAt: string): Promise<void> {
+    await this.db.run('UPDATE card SET last_used_at = ? WHERE id = ?', [lastUsedAt, id]);
+  }
+
   delete(id: string): Promise<void> {
     return this.db.transaction(async (tx) => {
       for (const table of ['card_tag', 'website', 'photo']) {

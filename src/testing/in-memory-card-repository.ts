@@ -22,6 +22,13 @@ export class InMemoryCardRepository implements CardRepository {
     this.cards.set(card.id, structuredClone(card));
   }
 
+  async updateLastUsed(id: string, lastUsedAt: string): Promise<void> {
+    const card = this.cards.get(id);
+    if (card) {
+      card.lastUsedAt = lastUsedAt;
+    }
+  }
+
   async delete(id: string): Promise<void> {
     this.cards.delete(id);
   }
