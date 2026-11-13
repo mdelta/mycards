@@ -46,6 +46,20 @@ describe('BwipBarcodeRenderer', () => {
     await expect(renderer.toSvg('DATA_MATRIX', 'ü^123')).resolves.toContain('<path');
   });
 
+  it('encodes the ECI marker as a directive, not as literal text', async () => {
+    const { toSVG } = await import('bwip-js/browser');
+    const literal = toSVG({
+      bcid: 'qrcode',
+      text: '^ECI000026Müller',
+      scale: 3,
+      paddingwidth: 12,
+      paddingheight: 12,
+      backgroundcolor: 'FFFFFF',
+    });
+
+    expect(await renderer.toSvg('QR_CODE', 'Müller')).not.toBe(literal);
+  });
+
   it('rejects values the symbology cannot encode', async () => {
     await expect(renderer.toSvg('EAN_13', '5901234123458')).rejects.toThrow(/check digit/i);
   });
