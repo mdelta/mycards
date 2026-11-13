@@ -7,7 +7,7 @@ import { BwipBarcodeRenderer } from './bwip-barcode-renderer';
 /** Values the domain accepts must render; one sample per type plus the edge cases of the rules. */
 const SAMPLES: Record<BarcodeType, string[]> = {
   AZTEC: ['Müller €'],
-  CODABAR: ['A123456B', '1234-5678'],
+  CODABAR: ['A123456B', '1234-5678', 'c40156d'],
   CODE_39: ['ABC-123'],
   CODE_93: ['abc 123!'],
   CODE_128: ['Hello 123'],
@@ -38,6 +38,12 @@ describe('BwipBarcodeRenderer', () => {
 
   it('encodes different values differently', async () => {
     expect(await renderer.toSvg('QR_CODE', 'a')).not.toBe(await renderer.toSvg('QR_CODE', 'b'));
+  });
+
+  it('declares UTF-8 (ECI 26) only for non-ASCII values of 2D codes', async () => {
+    expect(await renderer.toSvg('QR_CODE', 'Müller')).not.toBe(await renderer.toSvg('QR_CODE', 'Muller'));
+    expect(await renderer.toSvg('AZTEC', 'a^b')).toBe(await renderer.toSvg('AZTEC', 'a^b'));
+    await expect(renderer.toSvg('DATA_MATRIX', 'ü^123')).resolves.toContain('<path');
   });
 
   it('rejects values the symbology cannot encode', async () => {

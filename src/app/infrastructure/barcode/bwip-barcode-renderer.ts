@@ -32,7 +32,7 @@ export class BwipBarcodeRenderer implements BarcodeRenderer {
     const { toSVG } = await this.bwip;
     return toSVG({
       bcid: BCID[type],
-      text: type === 'CODABAR' && !/^[A-D]/i.test(value) ? `A${value}A` : value,
+      ...encode(type, value),
       scale: 3,
       // Quiet zone: about 12 modules for linear codes, 6 for 2D codes (points at scale 1).
       paddingwidth: 12,
@@ -40,4 +40,20 @@ export class BwipBarcodeRenderer implements BarcodeRenderer {
       backgroundcolor: 'FFFFFF',
     });
   }
+}
+
+const ECI_TYPES: ReadonlySet<BarcodeType> = new Set(['AZTEC', 'DATA_MATRIX', 'PDF_417', 'QR_CODE']);
+
+/** Text and parse flag for bwip-js. */
+function encode(type: BarcodeType, value: string): { text: string; parse?: boolean } {
+  if (type === 'CODABAR') {
+    const upper = value.toUpperCase();
+    return { text: /^[A-D]/.test(upper) ? upper : `A${upper}A` };
+  }
+  if (ECI_TYPES.has(type) && /[\u0080-\uFFFF]/.test(value)) {
+    // bwip-js encodes text as UTF-8; ECI 26 tells readers so instead of letting them assume ISO-8859-1.
+    // In parse mode `^` starts an escape sequence, so a literal `^` becomes `^094`.
+    return { text: `^ECI000026${value.replaceAll('^', '^094')}`, parse: true };
+  }
+  return { text: value };
 }
