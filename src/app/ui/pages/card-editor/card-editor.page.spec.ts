@@ -125,7 +125,7 @@ describe('CardEditorPage', () => {
   describe('existing card', () => {
     beforeEach(async () => {
       repository = new InMemoryCardRepository([
-        aCard({ id: 'a', storeName: 'Store', balance: 3, barcodeType: 'EAN_13' }),
+        aCard({ id: 'a', storeName: 'Store', cardId: '5901234123457', balance: 3, barcodeType: 'EAN_13' }),
       ]);
       await setUp('a');
     });
@@ -144,6 +144,20 @@ describe('CardEditorPage', () => {
 
       expect(await repository.findById('a')).toMatchObject({ storeName: 'Renamed', barcodeType: 'EAN_13' });
       expect((await repository.findById('a'))?.balance).toBeUndefined();
+      expect(nav.navigateBack).toHaveBeenCalledWith(['/cards', 'a']);
+    });
+
+    it('shows an invalid barcode value on the field that holds it', async () => {
+      page.form.patchValue({ cardId: 'abc' });
+      await page.save();
+      expect(page.form.controls.cardId.hasError('barcodeValueInvalid')).toBe(true);
+
+      page.form.patchValue({ barcodeValue: 'xyz' });
+      await page.save();
+      expect(page.form.controls.barcodeValue.hasError('barcodeValueInvalid')).toBe(true);
+      expect(page.form.controls.cardId.hasError('barcodeValueInvalid')).toBe(false);
+      expect(page.hasError('barcodeValueInvalid')).toBe(true);
+      expect(nav.navigateBack).not.toHaveBeenCalled();
     });
 
     it('deletes the card after confirmation', async () => {

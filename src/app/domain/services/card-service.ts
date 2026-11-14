@@ -61,6 +61,11 @@ export class CardService {
     return this.store({ ...existing, ...normalizeCardDraft(draft), updatedAt: this.clock.now() });
   }
 
+  /** Records that the card was shown (`lastUsedAt`); not an edit, so no validation and no `updatedAt`. */
+  markUsed(id: string): Promise<void> {
+    return this.repository.updateLastUsed(id, this.clock.now());
+  }
+
   delete(id: string): Promise<void> {
     return this.repository.delete(id);
   }

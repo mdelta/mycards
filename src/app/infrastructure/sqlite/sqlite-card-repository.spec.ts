@@ -52,6 +52,16 @@ describe('SqliteCardRepository', () => {
     expect(await repository.findById('min')).toStrictEqual(minimal);
   });
 
+  it('updates only the last-used timestamp', async () => {
+    await repository.save(fullCard);
+
+    await repository.updateLastUsed('full', '2026-05-05T00:00:00.000Z');
+    await repository.updateLastUsed('missing', '2026-05-05T00:00:00.000Z');
+
+    expect(await repository.findById('full')).toEqual({ ...fullCard, lastUsedAt: '2026-05-05T00:00:00.000Z' });
+    expect(await repository.findAll()).toHaveLength(1);
+  });
+
   it('returns undefined for an unknown id', async () => {
     expect(await repository.findById('missing')).toBeUndefined();
   });

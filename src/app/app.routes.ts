@@ -12,6 +12,10 @@ export const routes: Routes = [
     loadComponent: () => import('./ui/pages/home/home.page').then((m) => m.HomePage),
   },
   { path: 'cards/new', loadComponent: loadCardEditor },
+  {
+    path: 'cards/:id',
+    loadComponent: () => import('./ui/pages/card-detail/card-detail.page').then((m) => m.CardDetailPage),
+  },
   { path: 'cards/:id/edit', loadComponent: loadCardEditor },
   {
     path: '',

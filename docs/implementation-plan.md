@@ -6,14 +6,14 @@
 
 ## 1. Development principles
 
-| Principle | How it is applied |
-|-----------|-------------------|
-| TDD | Domain services, mappers, format readers/writers and validators are written test-first (red → green → refactor). UI and thin platform adapters are tested after the fact where TDD adds little. |
+| Principle                      | How it is applied                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TDD                            | Domain services, mappers, format readers/writers and validators are written test-first (red → green → refactor). UI and thin platform adapters are tested after the fact where TDD adds little.                                                                                                                                             |
 | SOLID / separation of concerns | Layers from arc42 §5.2. The domain defines ports (interfaces); infrastructure implements them; UI only talks to domain services. Ports are bound to adapters with Angular `InjectionToken`s (dependency inversion), so tests can use in-memory fakes. One service per responsibility (e.g. `CardService`, `ExportService`, `CatimaMapper`). |
-| Thin UI | Pages are containers that call services; reusable components are presentational (inputs/outputs only). No business rules in templates or pages. |
-| Unit test coverage | Soft goal: ≥ 80 % line coverage. CI measures coverage with Vitest (`@vitest/coverage-v8`) and shows it in the job summary. [DECIDED] CI only reports coverage and never fails because of it. |
-| Test pyramid | Many unit tests (Vitest), a few Playwright e2e flows against the web build, and a manual device checklist for native features (camera, lock screen, brightness). |
-| Definition of done per step | Tests written/updated, lint + coverage green in CI, arc42/ADR updated if a decision changed, PR cites arc42/ADR. |
+| Thin UI                        | Pages are containers that call services; reusable components are presentational (inputs/outputs only). No business rules in templates or pages.                                                                                                                                                                                             |
+| Unit test coverage             | Soft goal: ≥ 80 % line coverage. CI measures coverage with Vitest (`@vitest/coverage-v8`) and shows it in the job summary. [DECIDED] CI only reports coverage and never fails because of it.                                                                                                                                                |
+| Test pyramid                   | Many unit tests (Vitest), a few Playwright e2e flows against the web build, and a manual device checklist for native features (camera, lock screen, brightness).                                                                                                                                                                            |
+| Definition of done per step    | Tests written/updated, lint + coverage green in CI, arc42/ADR updated if a decision changed, PR cites arc42/ADR.                                                                                                                                                                                                                            |
 
 ### Accepted trade-offs
 
@@ -56,7 +56,8 @@ presentation, privacy, data safety, maintainability, offline).
 - Performance check against the §10 scenario (app start → barcode ≤ 2 s); first quality scenario
   written into arc42 §10.
 - Tests: render round-trip for every barcode type (ADR-0017 consequence).
-- [DECIDED] `bwip-js` (ADR-0017). **[DECIDE]** plugins for brightness / keep-awake.
+- [DECIDED] `bwip-js` (ADR-0017); `@capacitor-community/screen-brightness` and
+  `@capacitor-community/keep-awake` behind a `PresentationMode` port (ADR-0017).
 
 ### Step 4 – Camera scanning (F-02, F-13; ADR-0010, ADR-0017)
 

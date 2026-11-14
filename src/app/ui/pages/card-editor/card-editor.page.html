@@ -37,7 +37,7 @@
             formControlName="cardId"
             [label]="t('fields.cardId')"
             labelPlacement="floating"
-            [errorText]="t('errors.cardIdRequired')"
+            [errorText]="hasError('cardIdRequired') ? t('errors.cardIdRequired') : t('errors.barcodeValueInvalid', { type: form.controls.barcodeType.value })"
           />
         </ion-item>
         <ion-item>
@@ -49,7 +49,12 @@
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-input formControlName="barcodeValue" [label]="t('fields.barcodeValue')" labelPlacement="floating" />
+          <ion-input
+            formControlName="barcodeValue"
+            [label]="t('fields.barcodeValue')"
+            labelPlacement="floating"
+            [errorText]="t('errors.barcodeValueInvalid', { type: form.controls.barcodeType.value })"
+          />
         </ion-item>
         <ion-item>
           <ion-textarea formControlName="note" [label]="t('fields.note')" labelPlacement="floating" [autoGrow]="true" />

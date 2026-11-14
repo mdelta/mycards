@@ -19,7 +19,7 @@
     } @else {
     <ion-list>
       @for (card of visibleCards(); track card.id) {
-      <ion-item [routerLink]="['/cards', card.id, 'edit']" [detail]="true" data-testid="card-item">
+      <ion-item [routerLink]="['/cards', card.id]" [detail]="true" data-testid="card-item">
         <ion-label>
           <h2>{{ card.storeName }}</h2>
           <p>{{ card.cardId }}</p>

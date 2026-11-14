@@ -9,6 +9,18 @@ describe('validateCardDraft', () => {
     expect(validateCardDraft({ storeName: ' ', cardId: '' })).toEqual(['storeNameRequired', 'cardIdRequired']);
   });
 
+  it('checks the barcode value, or else the card ID, against the barcode type', () => {
+    expect(validateCardDraft({ storeName: 'S', cardId: '5901234123457', barcodeType: 'EAN_13' })).toEqual([]);
+    expect(validateCardDraft({ storeName: 'S', cardId: 'abc', barcodeType: 'EAN_13' })).toEqual([
+      'barcodeValueInvalid',
+    ]);
+    expect(
+      validateCardDraft({ storeName: 'S', cardId: 'abc', barcodeValue: '5901234123457', barcodeType: 'EAN_13' }),
+    ).toEqual([]);
+    expect(validateCardDraft({ storeName: 'S', cardId: 'abc' })).toEqual([]);
+    expect(validateCardDraft({ storeName: 'S', cardId: ' ', barcodeType: 'EAN_13' })).toEqual(['cardIdRequired']);
+  });
+
   it('rejects a negative or non-finite balance', () => {
     expect(validateCardDraft({ storeName: 'S', cardId: '1', balance: Number.NaN })).toEqual(['balanceInvalid']);
     expect(validateCardDraft({ storeName: 'S', cardId: '1', balance: -1 })).toEqual(['balanceInvalid']);

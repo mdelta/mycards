@@ -14,7 +14,7 @@ import { provideTransloco } from '@jsverse/transloco';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { TranslocoHttpLoader } from './app/i18n/transloco-loader';
-import { provideCardStorage } from './app/infrastructure/providers';
+import { provideCardPresentation, provideCardStorage } from './app/infrastructure/providers';
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -23,6 +23,7 @@ bootstrapApplication(AppComponent, {
     provideRouter(routes, withPreloading(PreloadAllModules), withComponentInputBinding()),
     provideHttpClient(),
     provideCardStorage(),
+    provideCardPresentation(),
     provideTransloco({
       config: {
         availableLangs: ['en'],
