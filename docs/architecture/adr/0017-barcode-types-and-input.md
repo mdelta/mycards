@@ -15,6 +15,8 @@
   Aztec, Data Matrix, PDF417, QR Code. [DECIDED] Verified against `@capacitor-mlkit/barcode-scanning`:
   its 13 formats map 1:1 (same names) to `BarcodeType`; other formats are rejected.
 - [DECIDED] Rendering with `bwip-js`, which supports all types above.
+- [DECIDED] Saving trims leading and trailing whitespace from the card ID, the barcode value and
+  the other text fields, for typed and scanned values alike (PO, 2026-11-14).
 
 ## Implementation (step 3)
 
