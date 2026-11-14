@@ -110,6 +110,9 @@ describe('BackupPage', () => {
 
     expect(shared).toBeUndefined();
     expect(page.passwordMismatch()).toBe(true);
+    expect(fixture.nativeElement.querySelector('ion-text[role="alert"]')?.textContent).toContain(
+      'The passwords do not match.',
+    );
   });
 
   it('clears the repeated password with the password', () => {

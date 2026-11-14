@@ -73,7 +73,8 @@
     "import": {
       "header": "Import",
       "hint": "Cards in the file replace cards with the same ID. Your other cards are kept.",
-      "clean": "Clean import: delete all cards that are not in the file",
+      "clean": "Clean import",
+      "cleanHint": "Deletes all cards that are not in the file.",
       "button": "Import",
       "passwordHeader": "Password",
       "passwordMessage": "This file is protected with a password.",

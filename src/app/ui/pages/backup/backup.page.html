@@ -32,15 +32,16 @@
           [label]="t('export.passwordRepeat')"
           labelPlacement="floating"
           [value]="passwordRepeat()"
-          [class.ion-invalid]="passwordMismatch()"
-          [class.ion-touched]="passwordMismatch()"
-          [errorText]="t('export.passwordMismatch')"
           (ionInput)="onPassword($event, true)"
         >
           <ion-input-password-toggle slot="end" />
         </ion-input>
       </ion-item>
-      }
+      @if (passwordMismatch()) {
+      <ion-item lines="none">
+        <ion-text color="danger" role="alert">{{ t('export.passwordMismatch') }}</ion-text>
+      </ion-item>
+      } }
     </ion-list>
     <ion-button class="ion-margin" expand="block" [disabled]="busy()" (click)="exportCards()">
       {{ t('export.button') }}
@@ -52,7 +53,9 @@
         <ion-note>{{ t('import.hint') }}</ion-note>
       </ion-item>
       <ion-item>
-        <ion-toggle [checked]="clean()" (ionChange)="onClean($event)">{{ t('import.clean') }}</ion-toggle>
+        <ion-toggle [checked]="clean()" [helperText]="t('import.cleanHint')" (ionChange)="onClean($event)">
+          {{ t('import.clean') }}
+        </ion-toggle>
       </ion-item>
     </ion-list>
     <ion-button class="ion-margin" expand="block" [disabled]="busy()" (click)="importCards()">
