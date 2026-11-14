@@ -1,0 +1,65 @@
+<ng-container *transloco="let t; prefix: 'backup'">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/home" />
+      </ion-buttons>
+      <ion-title>{{ t('title') }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content>
+    <ion-list>
+      <ion-list-header>{{ t('export.header') }}</ion-list-header>
+      <ion-item lines="none">
+        <ion-note>{{ t('export.hint') }}</ion-note>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          type="password"
+          [label]="t('export.password')"
+          labelPlacement="floating"
+          [value]="password()"
+          (ionInput)="onPassword($event, false)"
+        >
+          <ion-input-password-toggle slot="end" />
+        </ion-input>
+      </ion-item>
+      @if (password()) {
+      <ion-item>
+        <ion-input
+          type="password"
+          [label]="t('export.passwordRepeat')"
+          labelPlacement="floating"
+          [value]="passwordRepeat()"
+          (ionInput)="onPassword($event, true)"
+        >
+          <ion-input-password-toggle slot="end" />
+        </ion-input>
+      </ion-item>
+      @if (passwordMismatch()) {
+      <ion-item lines="none">
+        <ion-text color="danger" role="alert">{{ t('export.passwordMismatch') }}</ion-text>
+      </ion-item>
+      } }
+    </ion-list>
+    <ion-button class="ion-margin" expand="block" [disabled]="busy()" (click)="exportCards()">
+      {{ t('export.button') }}
+    </ion-button>
+
+    <ion-list>
+      <ion-list-header>{{ t('import.header') }}</ion-list-header>
+      <ion-item lines="none">
+        <ion-note>{{ t('import.hint') }}</ion-note>
+      </ion-item>
+      <ion-item>
+        <ion-toggle [checked]="clean()" [helperText]="t('import.cleanHint')" (ionChange)="onClean($event)">
+          {{ t('import.clean') }}
+        </ion-toggle>
+      </ion-item>
+    </ion-list>
+    <ion-button class="ion-margin" expand="block" [disabled]="busy()" (click)="importCards()">
+      {{ t('import.button') }}
+    </ion-button>
+  </ion-content>
+</ng-container>

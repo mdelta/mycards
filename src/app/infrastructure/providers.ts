@@ -1,16 +1,25 @@
+import { DOCUMENT } from '@angular/common';
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { InjectionToken, inject, makeEnvironmentProviders } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { ScreenBrightness } from '@capacitor-community/screen-brightness';
 import { BarcodeScanner as MlKitPlugin } from '@capacitor-mlkit/barcode-scanning';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
 
+import type { BackupFiles } from '../domain/ports/backup-files';
 import type { BarcodeRenderer } from '../domain/ports/barcode-renderer';
 import type { BarcodeScanner } from '../domain/ports/barcode-scanner';
 import type { CardRepository } from '../domain/ports/card-repository';
 import type { PresentationMode } from '../domain/ports/presentation-mode';
+import { BackupService } from '../domain/services/backup-service';
 import { CardService } from '../domain/services/card-service';
 
+import { BrowserBackupFiles } from './backup/browser-backup-files';
+import { CapacitorBackupFiles } from './backup/capacitor-backup-files';
+import { ZipJsArchiveCodec } from './backup/zipjs-archive-codec';
 import { BwipBarcodeRenderer } from './barcode/bwip-barcode-renderer';
 import { MlKitBarcodeScanner } from './barcode/mlkit-barcode-scanner';
 import { CapacitorPresentationMode } from './display/capacitor-presentation-mode';
@@ -27,6 +36,7 @@ export const CARD_REPOSITORY = new InjectionToken<CardRepository>('CardRepositor
 export const BARCODE_RENDERER = new InjectionToken<BarcodeRenderer>('BarcodeRenderer');
 export const PRESENTATION_MODE = new InjectionToken<PresentationMode>('PresentationMode');
 export const BARCODE_SCANNER = new InjectionToken<BarcodeScanner>('BarcodeScanner');
+export const BACKUP_FILES = new InjectionToken<BackupFiles>('BackupFiles');
 
 /** Wires the domain services to the platform adapters (composition root, arc42 5.2). */
 export function provideCardStorage(): EnvironmentProviders {
@@ -57,5 +67,27 @@ export function cardServiceProvider(): Provider {
   return {
     provide: CardService,
     useFactory: () => new CardService(inject(CARD_REPOSITORY), new SystemClock(), new UuidGenerator()),
+  };
+}
+
+/** Export and import in the own format (F-05, F-11, ADR-0004): share sheet and file picker on Android. */
+export function provideBackup(): EnvironmentProviders {
+  return makeEnvironmentProviders([
+    {
+      provide: BACKUP_FILES,
+      useFactory: () =>
+        Capacitor.isNativePlatform()
+          ? new CapacitorBackupFiles(Filesystem, Share, FilePicker)
+          : new BrowserBackupFiles(inject(DOCUMENT)),
+    },
+    backupServiceProvider(),
+  ]);
+}
+
+/** `BackupService` on top of whatever `CARD_REPOSITORY` is provided (tests provide a fake). */
+export function backupServiceProvider(): Provider {
+  return {
+    provide: BackupService,
+    useFactory: () => new BackupService(inject(CARD_REPOSITORY), new ZipJsArchiveCodec(), new SystemClock()),
   };
 }

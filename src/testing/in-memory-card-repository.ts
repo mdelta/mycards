@@ -32,4 +32,11 @@ export class InMemoryCardRepository implements CardRepository {
   async delete(id: string): Promise<void> {
     this.cards.delete(id);
   }
+
+  async saveAll(cards: readonly Card[], options: { deleteOthers?: boolean } = {}): Promise<void> {
+    if (options.deleteOthers) {
+      this.cards.clear();
+    }
+    cards.forEach((card) => this.cards.set(card.id, structuredClone(card)));
+  }
 }

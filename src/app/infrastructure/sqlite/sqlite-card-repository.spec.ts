@@ -96,4 +96,43 @@ describe('SqliteCardRepository', () => {
 
     expect(await repository.findById('a')).toEqual(aCard({ id: 'a', tagIds: ['t1'] }));
   });
+
+  describe('saveAll', () => {
+    beforeEach(async () => {
+      await repository.save(aCard({ id: 'kept', tagIds: ['t1'] }));
+      await repository.save(aCard({ id: 'replaced', storeName: 'Old', tagIds: ['t1'] }));
+      await db.run("INSERT INTO website (id, card_id, url) VALUES ('w', 'kept', 'https://example.com/a')");
+    });
+
+    it('replaces cards with the same id and keeps the others', async () => {
+      await repository.saveAll([aCard({ id: 'replaced', storeName: 'New', tagIds: ['t2'] }), aCard({ id: 'added' })]);
+
+      expect(await repository.findAll()).toEqual(
+        expect.arrayContaining([
+          aCard({ id: 'kept', tagIds: ['t1'] }),
+          aCard({ id: 'replaced', storeName: 'New', tagIds: ['t2'] }),
+          aCard({ id: 'added' }),
+        ]),
+      );
+      expect(await db.query('SELECT card_id FROM website')).toEqual([{ card_id: 'kept' }]);
+    });
+
+    it('deletes all other cards with their related rows when asked to', async () => {
+      await repository.saveAll([aCard({ id: 'replaced', storeName: 'New' })], { deleteOthers: true });
+
+      expect(await repository.findAll()).toEqual([aCard({ id: 'replaced', storeName: 'New' })]);
+      expect(await db.query('SELECT * FROM card_tag')).toEqual([]);
+      expect(await db.query('SELECT * FROM website')).toEqual([]);
+    });
+
+    it('changes nothing if one card fails', async () => {
+      await expect(
+        repository.saveAll([aCard({ id: 'added' }), aCard({ id: 'bad', tagIds: ['unknown-tag'] })], {
+          deleteOthers: true,
+        }),
+      ).rejects.toThrow();
+
+      expect((await repository.findAll()).map((c) => c.id).sort()).toEqual(['kept', 'replaced']);
+    });
+  });
 });

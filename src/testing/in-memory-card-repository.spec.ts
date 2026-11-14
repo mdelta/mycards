@@ -59,4 +59,17 @@ describe('InMemoryCardRepository', () => {
 
     expect(await repository.findById('a')).toEqual(aCard({ id: 'a', tagIds: ['t1'] }));
   });
+
+  it('saves many cards, keeping or deleting the others', async () => {
+    repository = new InMemoryCardRepository([aCard({ id: 'kept' }), aCard({ id: 'a', storeName: 'Old' })]);
+
+    await repository.saveAll([aCard({ id: 'a', storeName: 'New' })]);
+    expect((await repository.findAll()).map((c) => [c.id, c.storeName])).toEqual([
+      ['kept', 'Store'],
+      ['a', 'New'],
+    ]);
+
+    await repository.saveAll([aCard({ id: 'b' })], { deleteOthers: true });
+    expect((await repository.findAll()).map((c) => c.id)).toEqual(['b']);
+  });
 });

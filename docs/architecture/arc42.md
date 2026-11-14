@@ -93,7 +93,7 @@ flowchart LR
 |-----------------------|-------------------------------------------------------------------|--------|
 | Camera                | Native camera + Google ML Kit barcode scanning                      | [DECIDED] ADR-0010 |
 | Local storage         | SQLite + photo files in app sandbox                                 | [DECIDED] ADR-0003 |
-| File system           | Android Storage Access Framework / share sheet for import/export    | [PROPOSAL] ADR-0004 |
+| File system           | System file picker for import, share sheet for export               | [DECIDED] ADR-0004  |
 | Google backup         | Android Auto Backup of app data to the user's Google account        | [DECIDED] ADR-0014 |
 | Map apps              | Android intent with search query, user's map app (Google Maps, Organic Maps, OsmAnd, …) | [DECIDED] ADR-0005 |
 | Location service      | Not used by the app (map app determines location)                  | [DECIDED] ADR-0005 |
@@ -218,8 +218,8 @@ ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Tran
 
 1. Add card by scanning – see 6.2
 2. Show card at checkout – see 6.1
-3. Export all data → file / share target
-4. Import data (merge vs. replace, duplicates)
+3. Export all data → share sheet (format: [formats/mycards-backup.md](../formats/mycards-backup.md))
+4. Import data: overwrite cards by id, or clean import (ADR-0004)
 5. Find nearby shop → open map
 6. Show card on lock screen (optional)
 

@@ -11,7 +11,8 @@
     "favorite": "Favorite",
     "scan": "Scan card",
     "scannerNotReady": "The scanner is being downloaded. Try again in a moment.",
-    "scanFailed": "Scanning failed. Try again or add the card manually."
+    "scanFailed": "Scanning failed. Try again or add the card manually.",
+    "backup": "Export and import"
   },
   "cardEditor": {
     "newTitle": "New card",
@@ -56,5 +57,42 @@
     "validFrom": "Valid from",
     "expiry": "Expiry date",
     "note": "Note"
+  },
+  "backup": {
+    "title": "Export and import",
+    "export": {
+      "header": "Export",
+      "hint": "Creates a ZIP file with all your cards that you can save or send, e.g. to Google Drive.",
+      "password": "Password (optional)",
+      "passwordRepeat": "Repeat password",
+      "passwordMismatch": "The passwords do not match.",
+      "button": "Export",
+      "done": "Export file created.",
+      "failed": "Export failed. Try again."
+    },
+    "import": {
+      "header": "Import",
+      "hint": "Cards in the file replace cards with the same ID. Your other cards are kept.",
+      "clean": "Clean import",
+      "cleanHint": "Deletes all cards that are not in the file.",
+      "button": "Import",
+      "passwordHeader": "Password",
+      "passwordMessage": "This file is protected with a password.",
+      "wrongPasswordMessage": "Wrong password. Try again.",
+      "passwordPlaceholder": "Password",
+      "ok": "OK",
+      "cancel": "Cancel",
+      "confirmHeader": "Import {{ count }} cards?",
+      "confirmMessage": "Cards with the same ID will be overwritten.",
+      "confirmCleanMessage": "All {{ existing }} current cards will be deleted and replaced by the cards from the file.",
+      "confirm": "Import",
+      "done": "{{ count }} cards imported."
+    },
+    "errors": {
+      "unreadable": "This file is not a MyCards export.",
+      "invalidContent": "This file is not a valid MyCards export.",
+      "newerVersion": "This file was created by a newer version of MyCards. Update the app and try again.",
+      "importFailed": "Import failed. Your cards were not changed."
+    }
   }
 }
