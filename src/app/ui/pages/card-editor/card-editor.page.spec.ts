@@ -24,7 +24,7 @@ describe('CardEditorPage', () => {
     })),
   };
 
-  async function setUp(id?: string): Promise<void> {
+  async function setUp(id?: string, inputs: Record<string, string> = {}): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         CardEditorPage,
@@ -44,6 +44,9 @@ describe('CardEditorPage', () => {
     fixture = TestBed.createComponent(CardEditorPage);
     if (id) {
       fixture.componentRef.setInput('id', id);
+    }
+    for (const [name, value] of Object.entries(inputs)) {
+      fixture.componentRef.setInput(name, value);
     }
     page = fixture.componentInstance;
     fixture.detectChanges();
@@ -122,6 +125,20 @@ describe('CardEditorPage', () => {
     });
   });
 
+  describe('after a scan', () => {
+    it('pre-fills barcode type and card ID', async () => {
+      await setUp(undefined, { scannedType: 'EAN_13', scannedValue: '5901234123457' });
+
+      expect(page.form.getRawValue()).toMatchObject({ barcodeType: 'EAN_13', cardId: '5901234123457', storeName: '' });
+    });
+
+    it('ignores unknown barcode types', async () => {
+      await setUp(undefined, { scannedType: 'MAXICODE', scannedValue: 'x' });
+
+      expect(page.form.getRawValue()).toMatchObject({ barcodeType: '', cardId: '' });
+    });
+  });
+
   describe('existing card', () => {
     beforeEach(async () => {
       repository = new InMemoryCardRepository([
@@ -158,6 +175,18 @@ describe('CardEditorPage', () => {
       expect(page.form.controls.cardId.hasError('barcodeValueInvalid')).toBe(false);
       expect(page.hasError('barcodeValueInvalid')).toBe(true);
       expect(nav.navigateBack).not.toHaveBeenCalled();
+    });
+
+    it('clears barcode value errors when the barcode type changes', async () => {
+      page.form.patchValue({ cardId: 'abc', storeName: '' });
+      await page.save();
+      expect(page.form.controls.cardId.errors).toEqual({ barcodeValueInvalid: true });
+      expect(page.form.controls.storeName.hasError('storeNameRequired')).toBe(true);
+
+      page.form.patchValue({ barcodeType: 'CODE_128' });
+
+      expect(page.form.controls.cardId.errors).toBeNull();
+      expect(page.form.controls.storeName.hasError('storeNameRequired')).toBe(true);
     });
 
     it('deletes the card after confirmation', async () => {

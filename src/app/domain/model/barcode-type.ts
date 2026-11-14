@@ -16,3 +16,7 @@ export const BARCODE_TYPES = [
 ] as const;
 
 export type BarcodeType = (typeof BARCODE_TYPES)[number];
+
+export function isBarcodeType(value: string): value is BarcodeType {
+  return (BARCODE_TYPES as readonly string[]).includes(value);
+}

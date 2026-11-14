@@ -62,9 +62,11 @@ presentation, privacy, data safety, maintainability, offline).
 ### Step 4 – Camera scanning (F-02, F-13; ADR-0010, ADR-0017)
 
 - Infrastructure: ML Kit scanner adapter; mapping ML Kit formats → `BarcodeType`.
-- UI: scan button → camera → editor pre-filled with value and type; permission denied handling.
+- UI: scan button → camera → editor pre-filled with value and type; ~~permission denied handling~~
+  not needed: Google's scanner UI needs no camera permission. Instead: "scanner downloading" and
+  "scan failed" messages; cancel returns silently.
 - Final check of the supported barcode list against the plugin; ADR-0017 updated.
-- [DECIDED] Plugin `@capacitor-mlkit/barcode-scanning`.
+- [DECIDED] Plugin `@capacitor-mlkit/barcode-scanning` with the ready-made `scan()` UI (ADR-0010).
 
 ### Step 5 – Export and import, own format (F-05, F-11, quality goal 3; ADR-0004)
 
@@ -107,7 +109,8 @@ presentation, privacy, data safety, maintainability, offline).
 ### Step 10 – Release (N-01; ADR-0008)
 
 - Answer Q-14 (tooling, tracks, trigger), signing with the upload key from GitHub Secrets,
-  AAB build, Play upload, store listing, data safety form, privacy policy.
+  AAB build, Play upload, store listing, data safety form, privacy policy (both must declare
+  Google ML Kit's usage metrics, ADR-0010).
 - Needs the Google Play developer account.
 
 ### Step 11 – Polish

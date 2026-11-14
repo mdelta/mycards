@@ -39,7 +39,7 @@ Remaining scope questions: see section 11.2.
 | Priority | Quality goal   | Motivation                                                                 |
 |----------|----------------|----------------------------------------------------------------------------|
 | 1 | Speed of presentation  | At the checkout the card must be on screen within a few seconds            |
-| 2 | Privacy                | No own backend; data leaves the device only via user export or Android Auto Backup (ADR-0014) |
+| 2 | Privacy                | No own backend; card data leaves the device only via user export or Android Auto Backup (ADR-0014). Google ML Kit sends usage metrics without card data (ADR-0010) |
 | 3 | Data safety            | No loss of cards (app update, phone change) – via import/export            |
 | 4 | Maintainability        | Single developer, TypeScript-centric code base                             |
 | 5 | Offline capability     | Core features (show/scan card) work without network                        |
@@ -65,7 +65,7 @@ Remaining scope questions: see section 11.2.
 | Distribution: Google Play Store (AAB, Play App Signing, target-API requirement, Data-safety form, privacy policy URL) | Request / Google policy – current values to be verified at release time |
 | Language: TypeScript; Kotlin only where unavoidable (lock-screen plugin) | [DECIDED] ADR-0001 |
 | Framework: Capacitor + Angular, Ionic UI components  | [DECIDED] ADR-0001, ADR-0002, ADR-0009 |
-| No own backend / cloud storage of user data. Exception accepted by PO: Android Auto Backup to the user's Google account stays enabled | Request (F-04), ADR-0014 |
+| No own backend / cloud storage of user data. Exceptions accepted by PO: Android Auto Backup to the user's Google account stays enabled; Google ML Kit usage metrics (no card data, ADR-0010) | Request (F-04), ADR-0014 |
 | License: GPL-3.0-or-later                            | [DECIDED] ADR-0007 |
 | Clean-room: **no code is copied from Catima** (or other card apps). Only Catima's export file format is implemented for compatibility. | [DECIDED] ADR-0007 |
 | Documentation in Markdown, kept in this repository   | [DECIDED] PO, 2026-11-08 |
@@ -145,7 +145,7 @@ flowchart TB
     CardList[Card list / search / sorting]
     CardDetail[Card detail / barcode view]
     CardEdit[Card editor]
-    Scan[Scan screen]
+    Scan[Scan action - Google scanner UI]
     Settings[Settings / import-export]
   end
   subgraph Domain[Domain layer - TypeScript, framework independent]
@@ -154,10 +154,11 @@ flowchart TB
     ShopLocator[Shop locator]
     BarcodeRenderer[BarcodeRenderer port]
     PresentationMode[PresentationMode port]
+    Scanner[BarcodeScanner port]
   end
   subgraph Infra[Platform adapters]
     Repo[Card repository - storage]
-    CameraScan[Barcode scanner adapter]
+    CameraScan[ML Kit scanner adapter]
     Bwip[bwip-js barcode renderer]
     Screen[Brightness / keep-awake adapter]
     FileAdapter[File / share adapter]
@@ -215,7 +216,7 @@ ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Tran
 
 *To be detailed after decisions.* Planned scenarios:
 
-1. Add card by scanning
+1. Add card by scanning – see 6.2
 2. Show card at checkout – see 6.1
 3. Export all data → file / share target
 4. Import data (merge vs. replace, duplicates)
@@ -248,6 +249,34 @@ shows only the card ID; a stored value that cannot be encoded shows a hint inste
 
 ---
 
+### 6.2 Add card by scanning
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant List as Card list
+  participant S as BarcodeScanner (ML Kit)
+  participant GMS as Google scanner UI (Play services)
+  participant Edit as Card editor
+  User->>List: tap scan
+  List->>S: scan()
+  alt scanner module missing
+    S->>GMS: start module download
+    S-->>List: ScannerNotReadyError → "try again" message
+  else module available
+    S->>GMS: scan (all ADR-0017 formats)
+    GMS-->>S: barcode / cancel
+    S-->>List: { type, value } / undefined
+    List->>Edit: /cards/new?scannedType&scannedValue
+    Edit->>User: form pre-filled with barcode type and card ID
+  end
+```
+
+The scanner UI runs in Google Play services, so the app needs no camera permission (ADR-0010).
+In the browser the scan action is hidden; manual entry (F-10) is always available.
+
+---
+
 ## 7. Deployment View
 
 *Draft.*
@@ -266,7 +295,7 @@ shows only the card ID; a stored value that cannot be encoded shows a hint inste
 
 ## 8. Cross-cutting Concepts (to be filled)
 
-- Privacy & permissions: camera; no location permission (ADR-0005); internet kept (ADR-0015); no app lock (ADR-0013)
+- Privacy & permissions: no camera permission (Google scanner UI, ADR-0010); no location permission (ADR-0005); internet kept (ADR-0015); no app lock and no biometric permissions (ADR-0013); Google ML Kit usage metrics disclosed in privacy policy / Data-safety form (ADR-0010)
 - Data model versioning & migrations, export format versioning
 - Error handling, logging (no remote telemetry?)
 - Internationalization: English only at first, all UI texts externalized for later translation (ADR-0012)
@@ -320,11 +349,12 @@ Scenarios derived from the prioritized quality goals in section 1.2.
 |------|------------|
 | Auto Backup has a per-app size quota (documented by Google as 25 MB); many photos may exceed it and the backup then stops | Compress/limit photo size; exclude regenerable files; manual export remains the primary backup |
 | ML Kit depends on Google libraries/Play services – app not suitable for F-Droid / de-Googled devices | Accepted (ADR-0010) |
+| ML Kit sends usage metrics (device info, app version, per-installation ID, events, errors – no images or barcode values) to Google; no documented opt-out | Accepted and disclosed in privacy policy and Data-safety form (ADR-0010) |
 | Lock-screen feature needs native Kotlin and may behave differently across vendors / Android versions | Keep it optional, isolate in a small plugin, prototype (spike) early on real devices |
 | Lock-screen screen could expose more than intended (e.g. whole app reachable without unlock) | Separate minimal Activity that only shows barcodes (ADR-0006) |
 | Catima format changes or is under-specified | Version detection, tests with real Catima exports, compatibility mode documented separately |
 | Accidental GPL/copyright issues from copying Catima code | Clean-room rule (ADR-0007), PR review |
-| ML Kit barcode scanning depends on Google Play services (unbundled model) or increases APK size (bundled model) | Decide in ADR; ZXing as fallback |
+| ML Kit barcode scanning depends on Google Play services; the scanner module may need a download on first use | Decided: Play-services scanner UI, no bundled model (ADR-0010); "try again" message while downloading; manual entry as fallback |
 | Data loss on uninstall (local only) | Prominent export, reminders? |
 | Play policy changes (target API level yearly) | CI keeps SDK versions up to date |
 

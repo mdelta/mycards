@@ -15,6 +15,7 @@ An initial idea exists to download card presets (e.g. store names, logos) from a
 
 ## Consequences
 
-- No network calls are made by current features; any future network use (e.g. presets backend)
+- No network calls are made by our own code; the only network use is Google ML Kit's usage
+  metrics (ADR-0010). Any future network use (e.g. presets backend)
   requires its own ADR and must not upload user data.
 - The privacy policy / Data-safety form must reflect actual network use.

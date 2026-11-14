@@ -1,14 +1,18 @@
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { InjectionToken, inject, makeEnvironmentProviders } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { ScreenBrightness } from '@capacitor-community/screen-brightness';
+import { BarcodeScanner as MlKitPlugin } from '@capacitor-mlkit/barcode-scanning';
 
 import type { BarcodeRenderer } from '../domain/ports/barcode-renderer';
+import type { BarcodeScanner } from '../domain/ports/barcode-scanner';
 import type { CardRepository } from '../domain/ports/card-repository';
 import type { PresentationMode } from '../domain/ports/presentation-mode';
 import { CardService } from '../domain/services/card-service';
 
 import { BwipBarcodeRenderer } from './barcode/bwip-barcode-renderer';
+import { MlKitBarcodeScanner } from './barcode/mlkit-barcode-scanner';
 import { CapacitorPresentationMode } from './display/capacitor-presentation-mode';
 import { CapacitorSqlDatabase } from './sqlite/capacitor-sql-database';
 import { migrate } from './sqlite/migrations';
@@ -22,6 +26,7 @@ export const SQL_DATABASE = new InjectionToken<SqlDatabase>('SqlDatabase');
 export const CARD_REPOSITORY = new InjectionToken<CardRepository>('CardRepository');
 export const BARCODE_RENDERER = new InjectionToken<BarcodeRenderer>('BarcodeRenderer');
 export const PRESENTATION_MODE = new InjectionToken<PresentationMode>('PresentationMode');
+export const BARCODE_SCANNER = new InjectionToken<BarcodeScanner>('BarcodeScanner');
 
 /** Wires the domain services to the platform adapters (composition root, arc42 5.2). */
 export function provideCardStorage(): EnvironmentProviders {
@@ -37,6 +42,13 @@ export function provideCardPresentation(): EnvironmentProviders {
   return makeEnvironmentProviders([
     { provide: BARCODE_RENDERER, useFactory: () => new BwipBarcodeRenderer() },
     { provide: PRESENTATION_MODE, useFactory: () => new CapacitorPresentationMode(ScreenBrightness, KeepAwake) },
+  ]);
+}
+
+/** Camera scanning with Google's ML Kit scanner (F-02, ADR-0010); unavailable in the browser. */
+export function provideCardScanning(): EnvironmentProviders {
+  return makeEnvironmentProviders([
+    { provide: BARCODE_SCANNER, useFactory: () => new MlKitBarcodeScanner(MlKitPlugin, Capacitor.isNativePlatform()) },
   ]);
 }
 
