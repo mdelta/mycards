@@ -17,6 +17,13 @@ Use **Google ML Kit** barcode scanning via a Capacitor plugin.
 
 - Good recognition quality and speed; Google dependency accepted (app not targeted at F-Droid /
   de-Googled devices).
-- Plugin choice and bundled vs. Play-services-provided model are decided at implementation and
-  documented here.
+- [DECIDED] Plugin `@capacitor-mlkit/barcode-scanning` (pinned version) with Google's ready-made
+  scanner UI (`scan()`, Google code scanner). The scanner runs in Google Play services, so the app
+  declares **no `CAMERA` permission** and ships no own scanner screen or bundled model.
+- The Google scanner module is provided by Play services and may be downloaded on first use
+  (manifest meta-data `com.google.mlkit.vision.DEPENDENCIES = barcode_ui` requests it at install).
+  While it is missing, the app starts the download and asks the user to try again.
+- The scanner UI's look is fixed (no own overlay, torch button etc.). Devices without Play services
+  cannot scan; manual entry (F-10) remains.
+- Cancelling the scan returns to the card list without a message.
 - Barcode *rendering* (showing a card) is independent of scanning (arc42 4.2).

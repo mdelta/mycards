@@ -84,3 +84,16 @@ test('validates the barcode value and shows the barcode', async ({ page }) => {
   expect(await barcode.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   await expect(detail(page).getByTestId('card-id')).toHaveText('5901234123457');
 });
+
+test('pre-fills a new card from scan results and hides scanning in the browser', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByLabel('Scan card')).toHaveCount(0);
+
+  await page.goto('/cards/new?scannedType=EAN_13&scannedValue=5901234123457');
+  await expect(page.getByLabel('Card ID', { exact: true })).toHaveValue('5901234123457');
+  await page.getByLabel('Store name', { exact: true }).fill('Scanned shop');
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  await cardNames(page).filter({ hasText: 'Scanned shop' }).click();
+  await expect(detail(page).getByRole('img', { name: 'Barcode of Scanned shop' })).toBeVisible();
+});

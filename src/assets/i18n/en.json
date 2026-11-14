@@ -8,7 +8,10 @@
     "noMatch": "No cards match your search.",
     "search": "Search cards",
     "add": "Add card",
-    "favorite": "Favorite"
+    "favorite": "Favorite",
+    "scan": "Scan card",
+    "scannerNotReady": "The scanner is being downloaded. Try again in a moment.",
+    "scanFailed": "Scanning failed. Try again or add the card manually."
   },
   "cardEditor": {
     "newTitle": "New card",

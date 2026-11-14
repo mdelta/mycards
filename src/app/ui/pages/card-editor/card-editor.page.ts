@@ -1,5 +1,6 @@
 import type { OnInit } from '@angular/core';
 import { Component, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   AlertController,
@@ -26,7 +27,7 @@ import { addIcons } from 'ionicons';
 import { trash } from 'ionicons/icons';
 
 import type { BarcodeType } from '../../../domain/model/barcode-type';
-import { BARCODE_TYPES } from '../../../domain/model/barcode-type';
+import { BARCODE_TYPES, isBarcodeType } from '../../../domain/model/barcode-type';
 import type { Card } from '../../../domain/model/card';
 import type { CardDraft, CardValidationError } from '../../../domain/services/card-draft';
 import { CardService, InvalidCardError } from '../../../domain/services/card-service';
@@ -64,6 +65,9 @@ export class CardEditorPage implements OnInit {
 
   /** Route parameter; undefined when creating a new card. */
   readonly id = input<string>();
+  /** Query parameters set after a camera scan (F-02); pre-fill a new card. */
+  readonly scannedType = input<string>();
+  readonly scannedValue = input<string>();
 
   readonly barcodeTypes = BARCODE_TYPES;
   readonly notFound = signal(false);
@@ -83,11 +87,21 @@ export class CardEditorPage implements OnInit {
 
   constructor() {
     addIcons({ trash });
+    // A barcode value error refers to the previous type, so it no longer applies after a type change.
+    this.form.controls.barcodeType.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      for (const control of [this.form.controls.cardId, this.form.controls.barcodeValue]) {
+        if (control.hasError('barcodeValueInvalid')) {
+          const { barcodeValueInvalid: _, ...others } = control.errors ?? {};
+          control.setErrors(Object.keys(others).length ? others : null);
+        }
+      }
+    });
   }
 
   async ngOnInit(): Promise<void> {
     const id = this.id();
     if (!id) {
+      this.prefillScan();
       return;
     }
     const card = await this.cardService.get(id);
@@ -95,6 +109,14 @@ export class CardEditorPage implements OnInit {
       this.form.setValue(toFormValue(card));
     } else {
       this.notFound.set(true);
+    }
+  }
+
+  private prefillScan(): void {
+    const type = this.scannedType();
+    const value = this.scannedValue();
+    if (type && isBarcodeType(type) && value) {
+      this.form.patchValue({ barcodeType: type, cardId: value });
     }
   }
 
