@@ -177,6 +177,18 @@ describe('CardEditorPage', () => {
       expect(nav.navigateBack).not.toHaveBeenCalled();
     });
 
+    it('clears barcode value errors when the barcode type changes', async () => {
+      page.form.patchValue({ cardId: 'abc', storeName: '' });
+      await page.save();
+      expect(page.form.controls.cardId.errors).toEqual({ barcodeValueInvalid: true });
+      expect(page.form.controls.storeName.hasError('storeNameRequired')).toBe(true);
+
+      page.form.patchValue({ barcodeType: 'CODE_128' });
+
+      expect(page.form.controls.cardId.errors).toBeNull();
+      expect(page.form.controls.storeName.hasError('storeNameRequired')).toBe(true);
+    });
+
     it('deletes the card after confirmation', async () => {
       dismissRole = 'destructive';
 

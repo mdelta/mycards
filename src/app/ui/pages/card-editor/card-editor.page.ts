@@ -1,5 +1,6 @@
 import type { OnInit } from '@angular/core';
 import { Component, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   AlertController,
@@ -86,6 +87,15 @@ export class CardEditorPage implements OnInit {
 
   constructor() {
     addIcons({ trash });
+    // A barcode value error refers to the previous type, so it no longer applies after a type change.
+    this.form.controls.barcodeType.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      for (const control of [this.form.controls.cardId, this.form.controls.barcodeValue]) {
+        if (control.hasError('barcodeValueInvalid')) {
+          const { barcodeValueInvalid: _, ...others } = control.errors ?? {};
+          control.setErrors(Object.keys(others).length ? others : null);
+        }
+      }
+    });
   }
 
   async ngOnInit(): Promise<void> {
