@@ -24,7 +24,7 @@ describe('CardEditorPage', () => {
     })),
   };
 
-  async function setUp(id?: string): Promise<void> {
+  async function setUp(id?: string, inputs: Record<string, string> = {}): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         CardEditorPage,
@@ -44,6 +44,9 @@ describe('CardEditorPage', () => {
     fixture = TestBed.createComponent(CardEditorPage);
     if (id) {
       fixture.componentRef.setInput('id', id);
+    }
+    for (const [name, value] of Object.entries(inputs)) {
+      fixture.componentRef.setInput(name, value);
     }
     page = fixture.componentInstance;
     fixture.detectChanges();
@@ -119,6 +122,20 @@ describe('CardEditorPage', () => {
       await page.confirmDelete();
 
       expect(alertController.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('after a scan', () => {
+    it('pre-fills barcode type and card ID', async () => {
+      await setUp(undefined, { scannedType: 'EAN_13', scannedValue: '5901234123457' });
+
+      expect(page.form.getRawValue()).toMatchObject({ barcodeType: 'EAN_13', cardId: '5901234123457', storeName: '' });
+    });
+
+    it('ignores unknown barcode types', async () => {
+      await setUp(undefined, { scannedType: 'MAXICODE', scannedValue: 'x' });
+
+      expect(page.form.getRawValue()).toMatchObject({ barcodeType: '', cardId: '' });
     });
   });
 

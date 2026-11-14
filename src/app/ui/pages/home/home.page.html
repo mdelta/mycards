@@ -2,6 +2,13 @@
   <ion-header [translucent]="true">
     <ion-toolbar>
       <ion-title>{{ t('app.title') }}</ion-title>
+      @if (scanner.available) {
+      <ion-buttons slot="end">
+        <ion-button (click)="scan()">
+          <ion-icon slot="icon-only" name="scan-outline" [attr.aria-label]="t('cardList.scan')" />
+        </ion-button>
+      </ion-buttons>
+      }
     </ion-toolbar>
     @if (cards().length) {
     <ion-toolbar>

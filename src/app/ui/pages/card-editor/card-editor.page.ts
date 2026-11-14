@@ -26,7 +26,7 @@ import { addIcons } from 'ionicons';
 import { trash } from 'ionicons/icons';
 
 import type { BarcodeType } from '../../../domain/model/barcode-type';
-import { BARCODE_TYPES } from '../../../domain/model/barcode-type';
+import { BARCODE_TYPES, isBarcodeType } from '../../../domain/model/barcode-type';
 import type { Card } from '../../../domain/model/card';
 import type { CardDraft, CardValidationError } from '../../../domain/services/card-draft';
 import { CardService, InvalidCardError } from '../../../domain/services/card-service';
@@ -64,6 +64,9 @@ export class CardEditorPage implements OnInit {
 
   /** Route parameter; undefined when creating a new card. */
   readonly id = input<string>();
+  /** Query parameters set after a camera scan (F-02); pre-fill a new card. */
+  readonly scannedType = input<string>();
+  readonly scannedValue = input<string>();
 
   readonly barcodeTypes = BARCODE_TYPES;
   readonly notFound = signal(false);
@@ -88,6 +91,7 @@ export class CardEditorPage implements OnInit {
   async ngOnInit(): Promise<void> {
     const id = this.id();
     if (!id) {
+      this.prefillScan();
       return;
     }
     const card = await this.cardService.get(id);
@@ -95,6 +99,14 @@ export class CardEditorPage implements OnInit {
       this.form.setValue(toFormValue(card));
     } else {
       this.notFound.set(true);
+    }
+  }
+
+  private prefillScan(): void {
+    const type = this.scannedType();
+    const value = this.scannedValue();
+    if (type && isBarcodeType(type) && value) {
+      this.form.patchValue({ barcodeType: type, cardId: value });
     }
   }
 

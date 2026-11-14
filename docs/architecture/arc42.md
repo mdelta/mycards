@@ -145,7 +145,7 @@ flowchart TB
     CardList[Card list / search / sorting]
     CardDetail[Card detail / barcode view]
     CardEdit[Card editor]
-    Scan[Scan screen]
+    Scan[Scan action - Google scanner UI]
     Settings[Settings / import-export]
   end
   subgraph Domain[Domain layer - TypeScript, framework independent]
@@ -154,10 +154,11 @@ flowchart TB
     ShopLocator[Shop locator]
     BarcodeRenderer[BarcodeRenderer port]
     PresentationMode[PresentationMode port]
+    Scanner[BarcodeScanner port]
   end
   subgraph Infra[Platform adapters]
     Repo[Card repository - storage]
-    CameraScan[Barcode scanner adapter]
+    CameraScan[ML Kit scanner adapter]
     Bwip[bwip-js barcode renderer]
     Screen[Brightness / keep-awake adapter]
     FileAdapter[File / share adapter]
@@ -215,7 +216,7 @@ ESLint enforces that `domain/` imports neither Angular, Ionic, Capacitor or Tran
 
 *To be detailed after decisions.* Planned scenarios:
 
-1. Add card by scanning
+1. Add card by scanning – see 6.2
 2. Show card at checkout – see 6.1
 3. Export all data → file / share target
 4. Import data (merge vs. replace, duplicates)
@@ -245,6 +246,34 @@ sequenceDiagram
 
 Editing is a separate action on the detail page (`/cards/:id/edit`). A card without barcode type
 shows only the card ID; a stored value that cannot be encoded shows a hint instead of a barcode.
+
+---
+
+### 6.2 Add card by scanning
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant List as Card list
+  participant S as BarcodeScanner (ML Kit)
+  participant GMS as Google scanner UI (Play services)
+  participant Edit as Card editor
+  User->>List: tap scan
+  List->>S: scan()
+  alt scanner module missing
+    S->>GMS: start module download
+    S-->>List: ScannerNotReadyError → "try again" message
+  else module available
+    S->>GMS: scan (all ADR-0017 formats)
+    GMS-->>S: barcode / cancel
+    S-->>List: { type, value } / undefined
+    List->>Edit: /cards/new?scannedType&scannedValue
+    Edit->>User: form pre-filled with barcode type and card ID
+  end
+```
+
+The scanner UI runs in Google Play services, so the app needs no camera permission (ADR-0010).
+In the browser the scan action is hidden; manual entry (F-10) is always available.
 
 ---
 
@@ -324,7 +353,7 @@ Scenarios derived from the prioritized quality goals in section 1.2.
 | Lock-screen screen could expose more than intended (e.g. whole app reachable without unlock) | Separate minimal Activity that only shows barcodes (ADR-0006) |
 | Catima format changes or is under-specified | Version detection, tests with real Catima exports, compatibility mode documented separately |
 | Accidental GPL/copyright issues from copying Catima code | Clean-room rule (ADR-0007), PR review |
-| ML Kit barcode scanning depends on Google Play services (unbundled model) or increases APK size (bundled model) | Decide in ADR; ZXing as fallback |
+| ML Kit barcode scanning depends on Google Play services; the scanner module may need a download on first use | Decided: Play-services scanner UI, no bundled model (ADR-0010); "try again" message while downloading; manual entry as fallback |
 | Data loss on uninstall (local only) | Prominent export, reminders? |
 | Play policy changes (target API level yearly) | CI keeps SDK versions up to date |
 
