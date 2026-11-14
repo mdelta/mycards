@@ -9,12 +9,13 @@ Implementation: `src/app/domain/services/backup-document.ts` and
 - A ZIP file, named `mycards-YYYY-MM-DD.zip` (UTC date of the export).
 - Entries:
 
-  | Entry          | Content                                                         |
-  | -------------- | --------------------------------------------------------------- |
-  | `mycards.json` | The document described below, UTF-8.                            |
+  | Entry          | Content                                                        |
+  | -------------- | -------------------------------------------------------------- |
+  | `mycards.json` | The document described below, UTF-8.                           |
   | `photos/…`     | Reserved for card photos (step 7). Version 1 writes no photos. |
 
   Import ignores all other entries.
+
 - **Optional password:** if the user sets a password, every entry is encrypted with WinZip AES-256
   (ZIP compression method 99). Legacy ZipCrypto is never written. Without a password, entries are
   stored unencrypted. Entry names are not encrypted (a ZIP limitation); they contain no card data.
@@ -42,39 +43,39 @@ Implementation: `src/app/domain/services/backup-document.ts` and
 }
 ```
 
-| Field        | Type    | Meaning                                                              |
-| ------------ | ------- | -------------------------------------------------------------------- |
-| `format`     | string  | Always `mycards-backup`.                                             |
-| `version`    | integer | Format version, currently `1`. Increased on incompatible changes.    |
-| `exportedAt` | string  | ISO 8601 UTC time of the export. Informational.                      |
-| `cards`      | array   | All cards, including archived ones.                                  |
+| Field        | Type    | Meaning                                                           |
+| ------------ | ------- | ----------------------------------------------------------------- |
+| `format`     | string  | Always `mycards-backup`.                                          |
+| `version`    | integer | Format version, currently `1`. Increased on incompatible changes. |
+| `exportedAt` | string  | ISO 8601 UTC time of the export. Informational.                   |
+| `cards`      | array   | All cards, including archived ones.                               |
 
 ### Card
 
 The fields of the domain model (ADR-0016). Optional fields are omitted when empty.
 
-| Field              | Type    | Required | Notes                                                          |
-| ------------------ | ------- | -------- | -------------------------------------------------------------- |
-| `id`               | string  | yes      | Unique within the file; the matching key for import.           |
-| `storeName`        | string  | yes      | Not blank.                                                     |
-| `cardId`           | string  | yes      | Not blank.                                                     |
-| `barcodeValue`     | string  | no       | Only if it differs from `cardId`.                              |
-| `barcodeType`      | string  | no       | One of the 13 types of ADR-0017, e.g. `QR_CODE`, `EAN_13`.     |
-| `note`             | string  | no       |                                                                |
-| `validFrom`        | string  | no       | Date `YYYY-MM-DD`.                                             |
-| `expiry`           | string  | no       | Date `YYYY-MM-DD`, not before `validFrom`.                     |
-| `balance`          | number  | no       | Not negative.                                                  |
-| `balanceType`      | string  | no       | E.g. `EUR`, `points`.                                          |
-| `color`            | string  | no       |                                                                |
-| `icon`             | string  | no       |                                                                |
-| `favorite`         | boolean | yes      |                                                                |
-| `archived`         | boolean | yes      |                                                                |
-| `showOnLockScreen` | boolean | yes      |                                                                |
-| `homepageUrl`      | string  | no       |                                                                |
-| `shopSearchTerm`   | string  | no       |                                                                |
-| `createdAt`        | string  | yes      | ISO 8601 UTC.                                                  |
-| `updatedAt`        | string  | yes      | ISO 8601 UTC.                                                  |
-| `lastUsedAt`       | string  | no       | ISO 8601 UTC.                                                  |
+| Field              | Type    | Required | Notes                                                                                      |
+| ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------ |
+| `id`               | string  | yes      | 1–64 of `A–Z a–z 0–9 _ -`, not `new`; unique within the file; the matching key for import. |
+| `storeName`        | string  | yes      | Not blank.                                                                                 |
+| `cardId`           | string  | yes      | Not blank.                                                                                 |
+| `barcodeValue`     | string  | no       | Only if it differs from `cardId`.                                                          |
+| `barcodeType`      | string  | no       | One of the 13 types of ADR-0017, e.g. `QR_CODE`, `EAN_13`.                                 |
+| `note`             | string  | no       |                                                                                            |
+| `validFrom`        | string  | no       | Date `YYYY-MM-DD`.                                                                         |
+| `expiry`           | string  | no       | Date `YYYY-MM-DD`, not before `validFrom`.                                                 |
+| `balance`          | number  | no       | Not negative.                                                                              |
+| `balanceType`      | string  | no       | E.g. `EUR`, `points`.                                                                      |
+| `color`            | string  | no       |                                                                                            |
+| `icon`             | string  | no       |                                                                                            |
+| `favorite`         | boolean | yes      |                                                                                            |
+| `archived`         | boolean | yes      |                                                                                            |
+| `showOnLockScreen` | boolean | yes      |                                                                                            |
+| `homepageUrl`      | string  | no       |                                                                                            |
+| `shopSearchTerm`   | string  | no       |                                                                                            |
+| `createdAt`        | string  | yes      | ISO 8601 UTC.                                                                              |
+| `updatedAt`        | string  | yes      | ISO 8601 UTC.                                                                              |
+| `lastUsedAt`       | string  | no       | ISO 8601 UTC.                                                                              |
 
 Tags, extra websites and photos are not part of version 1; they are added with steps 6 and 7.
 Adding optional fields does not change the version.

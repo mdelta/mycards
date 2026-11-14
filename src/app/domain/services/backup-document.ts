@@ -11,6 +11,10 @@ export const BACKUP_DOCUMENT_NAME = 'mycards.json';
 
 type ExportedCard = Omit<Card, 'tagIds'>;
 
+/** Ids appear in routes (`/cards/:id`); `new` is the creation route. */
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+const RESERVED_IDS = ['new'];
+
 const REQUIRED_TEXT = ['id', 'storeName', 'cardId', 'createdAt', 'updatedAt'] as const;
 const OPTIONAL_TEXT = [
   'barcodeValue',
@@ -79,10 +83,14 @@ function parseCard(raw: unknown): Card {
     card['barcodeType'] = type;
   }
   const result = card as unknown as Card;
-  if (!result.id || validateCardDraft(result).length) {
+  if (!isValidId(result.id) || validateCardDraft(result).length) {
     throw new BackupError('invalidContent');
   }
   return result;
+}
+
+function isValidId(id: string): boolean {
+  return ID_PATTERN.test(id) && !RESERVED_IDS.includes(id);
 }
 
 function ofType(value: unknown, type: 'string' | 'boolean' | 'number'): unknown {
