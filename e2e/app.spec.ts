@@ -1,11 +1,15 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
+/** Ionic's scroll assist briefly adds a disabled clone of a focused input. */
+const field = (page: Page, label: string) =>
+  page.getByLabel(label, { exact: true }).and(page.locator(':not(.cloned-input)'));
+
 async function addCard(page: Page, storeName: string, cardId: string, favorite = false): Promise<void> {
   await page.getByRole('link', { name: 'Add card' }).click();
   await expect(page.getByText('New card')).toBeVisible();
-  await page.getByLabel('Store name', { exact: true }).fill(storeName);
-  await page.getByLabel('Card ID', { exact: true }).fill(cardId);
+  await field(page, 'Store name').fill(storeName);
+  await field(page, 'Card ID').fill(cardId);
   if (favorite) {
     await page.getByRole('switch', { name: 'Favorite' }).click();
   }
@@ -45,11 +49,11 @@ test('creates, lists, searches, edits and deletes cards', async ({ page }) => {
   await expect(detail(page)).toContainText('No barcode type set');
   await detail(page).getByLabel('Edit', { exact: true }).click();
   await expect(page.getByText('Edit card')).toBeVisible();
-  await page.getByLabel('Balance', { exact: true }).fill('-1');
+  await field(page, 'Balance').fill('-1');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Balance must not be negative.')).toBeVisible();
-  await page.getByLabel('Balance', { exact: true }).fill('');
-  await page.getByLabel('Store name', { exact: true }).fill('Bakery Müller');
+  await field(page, 'Balance').fill('');
+  await field(page, 'Store name').fill('Bakery Müller');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(detail(page).locator('ion-title')).toHaveText('Bakery Müller');
   await detail(page).locator('ion-back-button').click();
@@ -66,15 +70,15 @@ test('creates, lists, searches, edits and deletes cards', async ({ page }) => {
 test('validates the barcode value and shows the barcode', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Add card' }).click();
-  await page.getByLabel('Store name', { exact: true }).fill('Grocer');
-  await page.getByLabel('Card ID', { exact: true }).fill('5901234123458');
+  await field(page, 'Store name').fill('Grocer');
+  await field(page, 'Card ID').fill('5901234123458');
   await page.locator('ion-select[formcontrolname="barcodeType"]').click();
   await page.getByRole('radio', { name: 'EAN_13' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Not a valid value for barcode type EAN_13.')).toBeVisible();
 
-  await page.getByLabel('Card ID', { exact: true }).fill('5901234123457');
+  await field(page, 'Card ID').fill('5901234123457');
   await page.getByRole('button', { name: 'Save' }).click();
   await cardNames(page).filter({ hasText: 'Grocer' }).click();
 
@@ -91,7 +95,7 @@ test('pre-fills a new card from scan results and hides scanning in the browser',
 
   await page.goto('/cards/new?scannedType=EAN_13&scannedValue=5901234123457');
   await expect(page.getByLabel('Card ID', { exact: true })).toHaveValue('5901234123457');
-  await page.getByLabel('Store name', { exact: true }).fill('Scanned shop');
+  await field(page, 'Store name').fill('Scanned shop');
   await page.getByRole('button', { name: 'Save' }).click();
 
   await cardNames(page).filter({ hasText: 'Scanned shop' }).click();
