@@ -50,8 +50,8 @@ describe('MlKitBarcodeScanner', () => {
     expect(plugin.scan).toHaveBeenCalledWith({ formats: [...BARCODE_TYPES] });
   });
 
-  it('reads non-UTF-8 content from the raw bytes', async () => {
-    scanned({ format: 'CODE_128' as Barcode['format'], rawValue: '', bytes: [0x4d, 0xfc, 0x6c] });
+  it('reads non-UTF-8 content from the signed raw bytes as ISO-8859-1', async () => {
+    scanned({ format: 'CODE_128' as Barcode['format'], rawValue: '', bytes: [0x4d, -4, 0x6c] });
 
     expect(await scanner.scan()).toEqual({ type: 'CODE_128', value: 'Mül' });
   });

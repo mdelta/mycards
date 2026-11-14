@@ -48,7 +48,11 @@ export class MlKitBarcodeScanner implements BarcodeScanner {
     if (!isBarcodeType(barcode.format)) {
       throw new Error(`Unsupported barcode format: ${barcode.format}`);
     }
-    // `rawValue` is only set for UTF-8 content; otherwise the bytes are read as ISO-8859-1.
-    return { type: barcode.format, value: barcode.rawValue || String.fromCharCode(...(barcode.bytes ?? [])) };
+    return { type: barcode.format, value: barcode.rawValue || latin1(barcode.bytes ?? []) };
   }
+}
+
+/** Fallback when `rawValue` is empty (non-UTF-8 content); Android delivers Java's signed bytes. */
+function latin1(bytes: number[]): string {
+  return String.fromCharCode(...bytes.map((byte) => byte & 0xff));
 }
