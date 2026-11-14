@@ -109,7 +109,8 @@ presentation, privacy, data safety, maintainability, offline).
 ### Step 10 – Release (N-01; ADR-0008)
 
 - Answer Q-14 (tooling, tracks, trigger), signing with the upload key from GitHub Secrets,
-  AAB build, Play upload, store listing, data safety form, privacy policy.
+  AAB build, Play upload, store listing, data safety form, privacy policy (both must declare
+  Google ML Kit's usage metrics, ADR-0010).
 - Needs the Google Play developer account.
 
 ### Step 11 – Polish

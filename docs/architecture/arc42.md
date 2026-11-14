@@ -39,7 +39,7 @@ Remaining scope questions: see section 11.2.
 | Priority | Quality goal   | Motivation                                                                 |
 |----------|----------------|----------------------------------------------------------------------------|
 | 1 | Speed of presentation  | At the checkout the card must be on screen within a few seconds            |
-| 2 | Privacy                | No own backend; data leaves the device only via user export or Android Auto Backup (ADR-0014) |
+| 2 | Privacy                | No own backend; card data leaves the device only via user export or Android Auto Backup (ADR-0014). Google ML Kit sends usage metrics without card data (ADR-0010) |
 | 3 | Data safety            | No loss of cards (app update, phone change) – via import/export            |
 | 4 | Maintainability        | Single developer, TypeScript-centric code base                             |
 | 5 | Offline capability     | Core features (show/scan card) work without network                        |
@@ -65,7 +65,7 @@ Remaining scope questions: see section 11.2.
 | Distribution: Google Play Store (AAB, Play App Signing, target-API requirement, Data-safety form, privacy policy URL) | Request / Google policy – current values to be verified at release time |
 | Language: TypeScript; Kotlin only where unavoidable (lock-screen plugin) | [DECIDED] ADR-0001 |
 | Framework: Capacitor + Angular, Ionic UI components  | [DECIDED] ADR-0001, ADR-0002, ADR-0009 |
-| No own backend / cloud storage of user data. Exception accepted by PO: Android Auto Backup to the user's Google account stays enabled | Request (F-04), ADR-0014 |
+| No own backend / cloud storage of user data. Exceptions accepted by PO: Android Auto Backup to the user's Google account stays enabled; Google ML Kit usage metrics (no card data, ADR-0010) | Request (F-04), ADR-0014 |
 | License: GPL-3.0-or-later                            | [DECIDED] ADR-0007 |
 | Clean-room: **no code is copied from Catima** (or other card apps). Only Catima's export file format is implemented for compatibility. | [DECIDED] ADR-0007 |
 | Documentation in Markdown, kept in this repository   | [DECIDED] PO, 2026-11-08 |
@@ -295,7 +295,7 @@ In the browser the scan action is hidden; manual entry (F-10) is always availabl
 
 ## 8. Cross-cutting Concepts (to be filled)
 
-- Privacy & permissions: camera; no location permission (ADR-0005); internet kept (ADR-0015); no app lock (ADR-0013)
+- Privacy & permissions: no camera permission (Google scanner UI, ADR-0010); no location permission (ADR-0005); internet kept (ADR-0015); no app lock and no biometric permissions (ADR-0013); Google ML Kit usage metrics disclosed in privacy policy / Data-safety form (ADR-0010)
 - Data model versioning & migrations, export format versioning
 - Error handling, logging (no remote telemetry?)
 - Internationalization: English only at first, all UI texts externalized for later translation (ADR-0012)
@@ -349,6 +349,7 @@ Scenarios derived from the prioritized quality goals in section 1.2.
 |------|------------|
 | Auto Backup has a per-app size quota (documented by Google as 25 MB); many photos may exceed it and the backup then stops | Compress/limit photo size; exclude regenerable files; manual export remains the primary backup |
 | ML Kit depends on Google libraries/Play services – app not suitable for F-Droid / de-Googled devices | Accepted (ADR-0010) |
+| ML Kit sends usage metrics (device info, app version, per-installation ID, events, errors – no images or barcode values) to Google; no documented opt-out | Accepted and disclosed in privacy policy and Data-safety form (ADR-0010) |
 | Lock-screen feature needs native Kotlin and may behave differently across vendors / Android versions | Keep it optional, isolate in a small plugin, prototype (spike) early on real devices |
 | Lock-screen screen could expose more than intended (e.g. whole app reachable without unlock) | Separate minimal Activity that only shows barcodes (ADR-0006) |
 | Catima format changes or is under-specified | Version detection, tests with real Catima exports, compatibility mode documented separately |

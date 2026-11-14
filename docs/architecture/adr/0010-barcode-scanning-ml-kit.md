@@ -27,3 +27,14 @@ Use **Google ML Kit** barcode scanning via a Capacitor plugin.
   cannot scan; manual entry (F-10) remains.
 - Cancelling the scan returns to the card list without a message.
 - Barcode *rendering* (showing a card) is independent of scanning (arc42 4.2).
+- [DECIDED] **Usage metrics to Google, accepted and disclosed.** The ML Kit libraries
+  (`com.google.mlkit:*`, `play-services-code-scanner`, via Google's `datatransport` library, which
+  also adds `ACCESS_NETWORK_STATE`) send diagnostics and usage metrics to Google: device
+  information, package name/version, per-installation identifier, performance metrics, API
+  configuration, event types and error codes. Camera images and scanned barcode values are
+  processed on-device and are **not** sent (Google:
+  [ML Kit terms](https://developers.google.com/ml-kit/terms),
+  [Android data disclosure](https://developers.google.com/ml-kit/android-data-disclosure)).
+  There is no documented opt-out; blocking the transport via manifest removal is unsupported and
+  not done. The scanner's auto-zoom option (which sends extra data) is not enabled. The privacy
+  policy and the Play Data-safety form must declare these metrics (implementation plan step 10).
