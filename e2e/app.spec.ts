@@ -97,3 +97,45 @@ test('pre-fills a new card from scan results and hides scanning in the browser',
   await cardNames(page).filter({ hasText: 'Scanned shop' }).click();
   await expect(detail(page).getByRole('img', { name: 'Barcode of Scanned shop' })).toBeVisible();
 });
+
+test('exports with a password and restores it with a clean import', async ({ page }) => {
+  await page.goto('/');
+  await addCard(page, 'Bakery', '111', true);
+  await addCard(page, 'Pharmacy', '222');
+
+  await page.getByRole('link', { name: 'Export and import' }).click();
+  await page.getByLabel('Password (optional)').fill('secret');
+  await page.getByLabel('Repeat password').fill('secret');
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toMatch(/^mycards-\d{4}-\d{2}-\d{2}\.zip$/);
+  const exportPath = await download.path();
+  await expect(page.getByText('Export file created.')).toBeVisible();
+
+  await page.locator('app-backup ion-back-button').click();
+  await addCard(page, 'Grocer', '333');
+  await openEditor(page, 'Bakery');
+  await page.getByRole('button', { name: 'Delete' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+  await expect(cardNames(page)).toHaveText(['Grocer', 'Pharmacy']);
+
+  await page.getByRole('link', { name: 'Export and import' }).click();
+  await page.getByRole('switch', { name: /Clean import/ }).click();
+  const chooserEvent = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await (await chooserEvent).setFiles(exportPath);
+
+  const dialog = page.getByRole('alertdialog');
+  await dialog.getByPlaceholder('Password').fill('wrong');
+  await dialog.getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('Wrong password. Try again.');
+  await page.getByRole('alertdialog').getByPlaceholder('Password').fill('secret');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('All 2 current cards will be deleted');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Import' }).click();
+  await expect(page.getByText('2 cards imported.')).toBeVisible();
+
+  await page.locator('app-backup ion-back-button').click();
+  await expect(cardNames(page)).toHaveText(['Bakery', 'Pharmacy']);
+});

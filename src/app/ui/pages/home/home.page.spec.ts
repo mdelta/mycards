@@ -58,6 +58,14 @@ describe('HomePage', () => {
     expect(element.querySelector('ion-searchbar')).toBeNull();
   });
 
+  it('links to export and import', async () => {
+    const element = await render(new InMemoryCardRepository());
+
+    expect(element.querySelector('ion-button[routerLink="/backup"]')?.getAttribute('aria-label')).toBe(
+      'Export and import',
+    );
+  });
+
   it('lists cards favorites first, then by store name', async () => {
     const element = await render(
       new InMemoryCardRepository([

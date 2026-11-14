@@ -55,6 +55,18 @@ const UPSERT = `INSERT INTO card (${COLUMNS.join(', ')}) VALUES (${COLUMNS.map((
     .map((c) => `${c} = excluded.${c}`)
     .join(', ')}`;
 
+async function writeCard(tx: SqlDatabase, card: Card): Promise<void> {
+  const row = toRow(card);
+  await tx.run(
+    UPSERT,
+    COLUMNS.map((column) => row[column]),
+  );
+  await tx.run('DELETE FROM card_tag WHERE card_id = ?', [card.id]);
+  for (const tagId of card.tagIds) {
+    await tx.run('INSERT INTO card_tag (card_id, tag_id) VALUES (?, ?)', [card.id, tagId]);
+  }
+}
+
 /** `CardRepository` backed by SQLite (ADR-0003). */
 export class SqliteCardRepository implements CardRepository {
   constructor(private readonly db: SqlDatabase) {}
@@ -71,15 +83,18 @@ export class SqliteCardRepository implements CardRepository {
   }
 
   save(card: Card): Promise<void> {
+    return this.db.transaction((tx) => writeCard(tx, card));
+  }
+
+  saveAll(cards: readonly Card[], options: { deleteOthers?: boolean } = {}): Promise<void> {
     return this.db.transaction(async (tx) => {
-      const row = toRow(card);
-      await tx.run(
-        UPSERT,
-        COLUMNS.map((column) => row[column]),
-      );
-      await tx.run('DELETE FROM card_tag WHERE card_id = ?', [card.id]);
-      for (const tagId of card.tagIds) {
-        await tx.run('INSERT INTO card_tag (card_id, tag_id) VALUES (?, ?)', [card.id, tagId]);
+      if (options.deleteOthers) {
+        for (const table of ['card_tag', 'website', 'photo', 'card']) {
+          await tx.run(`DELETE FROM ${table}`);
+        }
+      }
+      for (const card of cards) {
+        await writeCard(tx, card);
       }
     });
   }

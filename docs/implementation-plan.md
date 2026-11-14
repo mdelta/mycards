@@ -72,10 +72,14 @@ presentation, privacy, data safety, maintainability, offline).
 
 - Format specification in `docs/` (versioned JSON + photos folder in a ZIP, optional AES-256
   password).
-- Domain: `ExportService` / `ImportService`, overwrite-by-id import and "clean import" setting.
+- Domain: `BackupService` (export, read, restore), overwrite-by-id import and "clean import" setting.
 - Infrastructure: ZIP library adapter, Android file picker / share sheet adapter.
 - Tests: export → import round trip, wrong password, newer format version, clean vs. normal import.
-- [DECIDED] ZIP library `@zip.js/zip.js` with AES-256 (ADR-0004). **[DECIDE]** file picker plugin.
+- [DECIDED] ZIP library `@zip.js/zip.js` with AES-256 (ADR-0004).
+- [DECIDED] Import via `@capawesome/capacitor-file-picker`; export via `@capacitor/filesystem` +
+  `@capacitor/share` (share sheet only, no "Save as" dialog; ADR-0004).
+- Format: [formats/mycards-backup.md](formats/mycards-backup.md). Photos (step 7) and tags (step 6)
+  are added to the format in those steps.
 
 ### Step 6 – Card details: tags, color, icon, links, shop search (F-06, F-07, F-12; ADR-0005)
 

@@ -18,6 +18,10 @@ export const routes: Routes = [
   },
   { path: 'cards/:id/edit', loadComponent: loadCardEditor },
   {
+    path: 'backup',
+    loadComponent: () => import('./ui/pages/backup/backup.page').then((m) => m.BackupPage),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

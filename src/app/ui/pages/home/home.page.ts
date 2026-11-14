@@ -20,7 +20,7 @@ import {
 } from '@ionic/angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { addIcons } from 'ionicons';
-import { add, scanOutline, star } from 'ionicons/icons';
+import { add, scanOutline, star, swapVerticalOutline } from 'ionicons/icons';
 
 import type { Card } from '../../../domain/model/card';
 import { ScannerNotReadyError } from '../../../domain/ports/barcode-scanner';
@@ -65,7 +65,7 @@ export class HomePage implements ViewWillEnter {
   readonly visibleCards = computed(() => filterCards(this.cards(), this.query()));
 
   constructor() {
-    addIcons({ add, scanOutline, star });
+    addIcons({ add, scanOutline, star, swapVerticalOutline });
   }
 
   async ionViewWillEnter(): Promise<void> {

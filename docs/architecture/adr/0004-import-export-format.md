@@ -23,10 +23,17 @@ Users of Catima should be able to switch to MyCards.
   - Option "clean import" (setting): all existing data is deleted before importing.
   - Matching key for "same card" (own format: card id; Catima: Catima id or card ID + store) is
     defined in the format specification.
-- Files are read/written via the Android system file picker (Storage Access Framework) and/or the
-  share sheet.
+- [DECIDED] Files: **import** opens the Android system file picker
+  (`@capawesome/capacitor-file-picker`, no storage permission). **Export** writes the ZIP to the
+  app's cache folder (`@capacitor/filesystem`) and opens the Android share sheet
+  (`@capacitor/share`), from which the user sends it to Google Drive, a files app, e-mail etc. No
+  own "Save as" dialog, so no custom Kotlin plugin. The cache folder is emptied before each export.
+- [DECIDED] Own format version 1 and the import rules are specified in
+  [formats/mycards-backup.md](../../formats/mycards-backup.md). The "clean import" setting is a
+  switch on the export/import screen, off by default, and asks for confirmation.
 
 ## Consequences
 
 - Format specification lives in `docs/` and is versioned with the code.
+- Saving to local storage needs an installed app that accepts shared files (e.g. Files by Google).
 - Round-trip tests (export → import) and tests with real Catima export files.
