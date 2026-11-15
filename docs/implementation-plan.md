@@ -87,6 +87,12 @@ presentation, privacy, data safety, maintainability, offline).
 - Shop search: build a `geo:0,0?q=<search term>` intent so the user's map app opens
   (Google Maps or an OSM app); no location permission.
 - Tests: URL validation, search term default (= store name), intent URL building.
+- [DECIDED] Icon: first letter by default, or an icon from a built-in Ionic icon list; a custom
+  image follows with photos in step 7. Color: fixed palette of 12 (ADR-0016).
+- [DECIDED] `@capacitor/app-launcher` opens links and the map app, with an OpenStreetMap web
+  fallback (ADR-0005).
+- Export format version 2 adds tags and websites; version 1 files still import
+  ([format spec](formats/mycards-backup.md)).
 
 ### Step 7 – Photos (F-09; ADR-0003)
 

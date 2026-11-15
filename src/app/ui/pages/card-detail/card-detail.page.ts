@@ -7,6 +7,7 @@ import {
   IonBackButton,
   IonButton,
   IonButtons,
+  IonChip,
   IonContent,
   IonHeader,
   IonIcon,
@@ -16,19 +17,24 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  ToastController,
 } from '@ionic/angular';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { addIcons } from 'ionicons';
-import { createOutline } from 'ionicons/icons';
+import { createOutline, globeOutline, mapOutline, openOutline } from 'ionicons/icons';
 
 import type { Card } from '../../../domain/model/card';
 import { barcodeValueOf } from '../../../domain/services/barcode-value';
 import { CardService } from '../../../domain/services/card-service';
-import { BARCODE_RENDERER, PRESENTATION_MODE } from '../../../infrastructure/providers';
+import { isWebUrl, openShopSearch } from '../../../domain/services/links';
+import { BARCODE_RENDERER, EXTERNAL_LAUNCHER, PRESENTATION_MODE } from '../../../infrastructure/providers';
 
 type BarcodeView = { kind: 'loading' } | { kind: 'none' } | { kind: 'error' } | { kind: 'image'; url: SafeUrl };
 
-/** Shows a card at the checkout (F-03, quality goal 1): large barcode, card ID, bright screen. */
+/**
+ * Shows a card at the checkout (F-03, quality goal 1): large barcode, card ID, bright screen. Below
+ * it: details, tags, websites and the shop search (F-06, F-07, ADR-0005).
+ */
 @Component({
   selector: 'app-card-detail',
   templateUrl: 'card-detail.page.html',
@@ -37,6 +43,7 @@ type BarcodeView = { kind: 'loading' } | { kind: 'none' } | { kind: 'error' } | 
     IonBackButton,
     IonButton,
     IonButtons,
+    IonChip,
     IonContent,
     IonHeader,
     IonIcon,
@@ -55,6 +62,9 @@ export class CardDetailPage implements ViewWillEnter, ViewWillLeave {
   private readonly renderer = inject(BARCODE_RENDERER);
   private readonly presentation = inject(PRESENTATION_MODE);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly launcher = inject(EXTERNAL_LAUNCHER);
+  private readonly toasts = inject(ToastController);
+  private readonly transloco = inject(TranslocoService);
 
   /** Route parameter. */
   readonly id = input.required<string>();
@@ -62,9 +72,10 @@ export class CardDetailPage implements ViewWillEnter, ViewWillLeave {
   readonly card = signal<Card | undefined>(undefined);
   readonly loaded = signal(false);
   readonly barcode = signal<BarcodeView>({ kind: 'loading' });
+  readonly tagNames = signal<string[]>([]);
 
   constructor() {
-    addIcons({ createOutline });
+    addIcons({ createOutline, globeOutline, mapOutline, openOutline });
   }
 
   async ionViewWillEnter(): Promise<void> {
@@ -75,6 +86,23 @@ export class CardDetailPage implements ViewWillEnter, ViewWillLeave {
     if (card) {
       this.cardService.markUsed(card.id).catch(() => undefined);
       this.barcode.set(await this.render(card));
+      const tags = await this.cardService.listTags();
+      this.tagNames.set(tags.filter((tag) => card.tagIds.includes(tag.id)).map((tag) => tag.name));
+    }
+  }
+
+  async openUrl(url: string): Promise<void> {
+    await this.reportFailure(isWebUrl(url) && (await this.launcher.open(url)));
+  }
+
+  async findShop(card: Card): Promise<void> {
+    await this.reportFailure(await openShopSearch(this.launcher, card));
+  }
+
+  private async reportFailure(opened: boolean): Promise<void> {
+    if (!opened) {
+      const message = this.transloco.translate('cardDetail.openFailed');
+      await (await this.toasts.create({ message, duration: 4000 })).present();
     }
   }
 

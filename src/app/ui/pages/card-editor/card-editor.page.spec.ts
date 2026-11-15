@@ -17,10 +17,11 @@ describe('CardEditorPage', () => {
   let page: CardEditorPage;
   const nav = { navigateBack: vi.fn() };
   let dismissRole: string;
+  let dismissData: unknown;
   const alertController = {
     create: vi.fn(async () => ({
       present: async () => undefined,
-      onDidDismiss: async () => ({ role: dismissRole }),
+      onDidDismiss: async () => ({ role: dismissRole, data: dismissData }),
     })),
   };
 
@@ -57,6 +58,7 @@ describe('CardEditorPage', () => {
 
   beforeEach(() => {
     repository = new InMemoryCardRepository();
+    dismissData = undefined;
     vi.clearAllMocks();
   });
 
@@ -225,5 +227,139 @@ describe('CardEditorPage', () => {
     page.form.patchValue({ storeName: 'S', cardId: '1' });
 
     await expect(page.save()).rejects.toThrow('disk full');
+  });
+
+  describe('appearance, tags and links', () => {
+    const input = (event: string | null): CustomEvent<{ value?: string | null }> =>
+      new CustomEvent('ionInput', { detail: { value: event } });
+
+    beforeEach(() => {
+      repository = new InMemoryCardRepository(
+        [
+          aCard({
+            id: 'c1',
+            storeName: 'Bakery',
+            tagIds: ['t1'],
+            websites: [{ label: 'Shop', url: 'https://shop.example.com' }, { url: 'https://example.org' }],
+          }),
+        ],
+        [{ id: 't1', name: 'Food' }],
+      );
+    });
+
+    it('saves color, icon, tags, homepage, shop search term and websites', async () => {
+      await setUp();
+      page.form.patchValue({ storeName: 'Store', cardId: '1', homepageUrl: 'https://store.example.com' });
+      page.form.patchValue({ shopSearchTerm: 'Store Berlin', tagIds: ['t1'] });
+      page.selectColor(page.colors[2]);
+      page.selectIcon('cafe');
+      page.addWebsite();
+      page.editWebsite(0, 'label', input(' Coupons '));
+      page.editWebsite(0, 'url', input('https://coupons.example.com'));
+      page.addWebsite();
+
+      await page.save();
+
+      const saved = (await repository.findAll()).find((card) => card.storeName === 'Store');
+      expect(saved).toMatchObject({
+        color: page.colors[2],
+        icon: 'cafe',
+        tagIds: ['t1'],
+        homepageUrl: 'https://store.example.com',
+        shopSearchTerm: 'Store Berlin',
+        websites: [{ label: 'Coupons', url: 'https://coupons.example.com' }],
+      });
+    });
+
+    it('shows the color palette, the icon list and the existing tags', async () => {
+      await setUp('c1');
+      fixture.detectChanges();
+      const element = fixture.nativeElement as HTMLElement;
+
+      expect(element.querySelectorAll('[data-testid="color-swatch"]')).toHaveLength(page.colors.length);
+      expect(element.querySelectorAll('[data-testid="icon-option"]')).toHaveLength(page.iconKeys.length);
+      expect(element.querySelector('[data-testid="avatar-preview"]')?.textContent?.trim()).toBe('B');
+      await vi.waitFor(() => expect(page.tags()).toEqual([{ id: 't1', name: 'Food' }]));
+    });
+
+    it('loads and removes the websites of an existing card', async () => {
+      await setUp('c1');
+      fixture.detectChanges();
+
+      expect(page.websites()).toEqual([
+        { label: 'Shop', url: 'https://shop.example.com' },
+        { label: '', url: 'https://example.org' },
+      ]);
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="website-row"]')).toHaveLength(2);
+
+      page.removeWebsite(0);
+      await page.save();
+
+      expect((await repository.findById('c1'))?.websites).toEqual([{ url: 'https://example.org' }]);
+    });
+
+    it('lets a card with a legacy color be saved, falling back to the automatic color', async () => {
+      await repository.save(aCard({ id: 'legacy', color: '#FFF44336' }));
+      await setUp('legacy');
+
+      expect(page.form.controls.color.value).toBe('');
+      await page.save();
+
+      expect((await repository.findById('legacy'))?.color).toBeUndefined();
+    });
+
+    it('shows errors for invalid URLs and does not save', async () => {
+      await setUp('c1');
+      page.form.patchValue({ homepageUrl: 'example.com' });
+      page.editWebsite(1, 'url', input('ftp://example.org'));
+
+      await page.save();
+      fixture.detectChanges();
+
+      expect(page.form.controls.homepageUrl.errors).toEqual({ homepageUrlInvalid: true });
+      expect(page.websiteError()).toBe(true);
+      expect(text()).toContain(en.cardEditor.errors.websiteUrlInvalid);
+      expect((await repository.findById('c1'))?.homepageUrl).toBeUndefined();
+
+      page.editWebsite(1, 'url', input(null));
+      expect(page.websiteError()).toBe(false);
+    });
+
+    it('creates a new tag and selects it', async () => {
+      await setUp('c1');
+      dismissRole = 'confirm';
+      dismissData = { values: { name: ' Drugstore ' } };
+
+      await page.addTag();
+
+      expect(page.tags().map((tag) => tag.name)).toEqual(['Drugstore', 'Food']);
+      const created = page.tags().find((tag) => tag.name === 'Drugstore')!;
+      expect(page.form.controls.tagIds.value).toEqual(['t1', created.id]);
+    });
+
+    it('selects an existing tag instead of creating a duplicate', async () => {
+      await setUp('c1');
+      page.form.controls.tagIds.setValue([]);
+      dismissRole = 'confirm';
+      dismissData = { values: { name: 'food' } };
+
+      await page.addTag();
+      await page.addTag();
+
+      expect(page.tags()).toEqual([{ id: 't1', name: 'Food' }]);
+      expect(page.form.controls.tagIds.value).toEqual(['t1']);
+    });
+
+    it('ignores a cancelled or empty new tag', async () => {
+      await setUp('c1');
+      dismissRole = 'cancel';
+      dismissData = { values: { name: 'Drugstore' } };
+      await page.addTag();
+      dismissRole = 'confirm';
+      dismissData = { values: { name: '  ' } };
+      await page.addTag();
+
+      expect(page.tags()).toHaveLength(1);
+    });
   });
 });

@@ -143,3 +143,45 @@ test('exports with a password and restores it with a clean import', async ({ pag
   await page.locator('app-backup ion-back-button').click();
   await expect(cardNames(page)).toHaveText(['Bakery', 'Pharmacy']);
 });
+
+test('adds tags, color, icon and links, filters by tag and opens links', async ({ page, context }) => {
+  await context.route(/^https:\/\/(coupons\.example\.com|www\.openstreetmap\.org)\//, (route) =>
+    route.fulfill({ body: 'ok', contentType: 'text/plain' }),
+  );
+  await page.goto('/');
+  await addCard(page, 'Pharmacy', '222');
+
+  await page.getByRole('link', { name: 'Add card' }).click();
+  await field(page, 'Store name').fill('Bakery');
+  await field(page, 'Card ID').fill('111');
+  await page.getByRole('radio', { name: '#1565C0' }).click();
+  await page.getByText('Icon', { exact: true }).click();
+  await page.getByRole('radio', { name: 'Cafe' }).click();
+  await page.getByTestId('new-tag').click();
+  await page.getByRole('alertdialog').getByPlaceholder('Tag name').fill('Food');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'OK' }).click();
+  await field(page, 'Homepage (https://…)').fill('bakery.example.com');
+  await page.getByTestId('add-website').click();
+  await field(page, 'Label (optional)').fill('Coupons');
+  await field(page, 'Website (https://…)').fill('https://coupons.example.com/');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Enter a full web address starting with https:// or http://.')).toBeVisible();
+  await field(page, 'Homepage (https://…)').fill('https://bakery.example.com/');
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  await expect(cardNames(page)).toHaveText(['Bakery', 'Pharmacy']);
+  await page.getByTestId('tag-filter').filter({ hasText: 'Food' }).click();
+  await expect(cardNames(page)).toHaveText(['Bakery']);
+  await page.reload();
+  await expect(cardNames(page)).toHaveText(['Bakery', 'Pharmacy']);
+
+  await cardNames(page).filter({ hasText: 'Bakery' }).click();
+  await expect(detail(page)).toContainText('Food');
+  const popup = page.waitForEvent('popup');
+  await detail(page).getByTestId('website').filter({ hasText: 'Coupons' }).click();
+  await (await popup).waitForURL('https://coupons.example.com/');
+
+  const mapPopup = page.waitForEvent('popup');
+  await detail(page).getByTestId('shop-search').click();
+  await (await mapPopup).waitForURL('https://www.openstreetmap.org/search?query=Bakery');
+});

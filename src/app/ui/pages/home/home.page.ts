@@ -4,6 +4,7 @@ import type { ViewWillEnter } from '@ionic/angular';
 import {
   IonButton,
   IonButtons,
+  IonChip,
   IonContent,
   IonFab,
   IonFabButton,
@@ -22,13 +23,14 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { addIcons } from 'ionicons';
 import { add, scanOutline, star, swapVerticalOutline } from 'ionicons/icons';
 
-import type { Card } from '../../../domain/model/card';
+import type { Card, Tag } from '../../../domain/model/card';
 import { ScannerNotReadyError } from '../../../domain/ports/barcode-scanner';
 import { filterCards } from '../../../domain/services/card-filter';
 import { CardService } from '../../../domain/services/card-service';
 import { BARCODE_SCANNER } from '../../../infrastructure/providers';
+import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.component';
 
-/** Card list: favorites first, search (F-04, F-12); entry point for scanning a new card (F-02). */
+/** Card list: favorites first, search, tag filter (F-04, F-07, F-12); entry point for scanning (F-02). */
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
@@ -36,6 +38,8 @@ import { BARCODE_SCANNER } from '../../../infrastructure/providers';
   imports: [
     IonButton,
     IonButtons,
+    CardAvatarComponent,
+    IonChip,
     IonContent,
     IonFab,
     IonFabButton,
@@ -61,16 +65,27 @@ export class HomePage implements ViewWillEnter {
 
   readonly cards = signal<Card[]>([]);
   readonly loaded = signal(false);
+  readonly tags = signal<Tag[]>([]);
   readonly query = signal('');
-  readonly visibleCards = computed(() => filterCards(this.cards(), this.query()));
+  readonly selectedTag = signal<string | undefined>(undefined);
+  readonly visibleCards = computed(() => filterCards(this.cards(), this.query(), this.selectedTag()));
 
   constructor() {
     addIcons({ add, scanOutline, star, swapVerticalOutline });
   }
 
   async ionViewWillEnter(): Promise<void> {
-    this.cards.set(await this.cardService.list());
+    const [cards, tags] = await Promise.all([this.cardService.list(), this.cardService.listTags()]);
+    this.cards.set(cards);
+    this.tags.set(tags);
+    if (!tags.some((tag) => tag.id === this.selectedTag())) {
+      this.selectedTag.set(undefined);
+    }
     this.loaded.set(true);
+  }
+
+  toggleTag(id: string): void {
+    this.selectedTag.update((selected) => (selected === id ? undefined : id));
   }
 
   onSearch(event: CustomEvent<{ value?: string | null }>): void {

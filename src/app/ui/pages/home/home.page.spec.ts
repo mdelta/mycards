@@ -143,4 +143,49 @@ describe('HomePage', () => {
       expect(toast.present).toHaveBeenCalled();
     });
   });
+
+  describe('tags', () => {
+    const repositoryWithTags = (): InMemoryCardRepository =>
+      new InMemoryCardRepository(
+        [
+          aCard({ id: 'a', storeName: 'Bakery', tagIds: ['t1'] }),
+          aCard({ id: 'b', storeName: 'Cinema', tagIds: ['t2'], icon: 'film', color: '#C62828' }),
+        ],
+        [
+          { id: 't1', name: 'Food' },
+          { id: 't2', name: 'Fun' },
+        ],
+      );
+
+    it('filters the list by a tag and clears the filter on a second tap', async () => {
+      const element = await render(repositoryWithTags());
+      const chips = [...element.querySelectorAll<HTMLElement>('[data-testid="tag-filter"]')];
+      expect(chips.map((chip) => chip.textContent?.trim())).toEqual(['Food', 'Fun']);
+
+      chips[1].click();
+      fixture.detectChanges();
+
+      expect(storeNames(element)).toEqual(['Cinema']);
+      expect(chips[1].getAttribute('aria-pressed')).toBe('true');
+
+      chips[1].click();
+      fixture.detectChanges();
+
+      expect(storeNames(element)).toEqual(['Bakery', 'Cinema']);
+    });
+
+    it('shows no tag bar without tags', async () => {
+      const element = await render(new InMemoryCardRepository([aCard()]));
+
+      expect(element.querySelector('[data-testid="tag-filter"]')).toBeNull();
+    });
+
+    it('shows each card with its avatar', async () => {
+      const element = await render(repositoryWithTags());
+      const avatars = [...element.querySelectorAll('app-card-avatar')];
+
+      expect(avatars[0].textContent?.trim()).toBe('B');
+      expect(avatars[1].querySelector('ion-icon')).not.toBeNull();
+    });
+  });
 });

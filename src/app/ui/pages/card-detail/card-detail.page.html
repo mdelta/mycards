@@ -59,6 +59,42 @@
       </ion-item>
       }
     </ion-list>
+
+    @if (tagNames().length) {
+    <div class="tags" [attr.aria-label]="t('tags')" role="list">
+      @for (name of tagNames(); track name) {
+      <ion-chip role="listitem" [outline]="true">{{ name }}</ion-chip>
+      }
+    </div>
+    }
+
+    <ion-list>
+      <ion-item button [detail]="false" (click)="findShop(card)" data-testid="shop-search">
+        <ion-icon slot="start" name="map-outline" aria-hidden="true" />
+        <ion-label>{{ t('findShop') }}</ion-label>
+      </ion-item>
+      @if (card.homepageUrl) {
+      <ion-item button [detail]="false" (click)="openUrl(card.homepageUrl)" data-testid="website">
+        <ion-icon slot="start" name="globe-outline" aria-hidden="true" />
+        <ion-label>
+          <h2>{{ t('homepage') }}</h2>
+          <p>{{ card.homepageUrl }}</p>
+        </ion-label>
+        <ion-icon slot="end" name="open-outline" aria-hidden="true" />
+      </ion-item>
+      } @for (site of card.websites; track $index) {
+      <ion-item button [detail]="false" (click)="openUrl(site.url)" data-testid="website">
+        <ion-icon slot="start" name="globe-outline" aria-hidden="true" />
+        <ion-label>
+          <h2>{{ site.label ?? site.url }}</h2>
+          @if (site.label) {
+          <p>{{ site.url }}</p>
+          }
+        </ion-label>
+        <ion-icon slot="end" name="open-outline" aria-hidden="true" />
+      </ion-item>
+      }
+    </ion-list>
     } @else if (loaded()) {
     <ion-text color="medium"><p>{{ t('notFound') }}</p></ion-text>
     }

@@ -95,7 +95,7 @@ flowchart LR
 | Local storage         | SQLite + photo files in app sandbox                                 | [DECIDED] ADR-0003 |
 | File system           | System file picker for import, share sheet for export               | [DECIDED] ADR-0004  |
 | Google backup         | Android Auto Backup of app data to the user's Google account        | [DECIDED] ADR-0014 |
-| Map apps              | Android intent with search query, user's map app (Google Maps, Organic Maps, OsmAnd, …) | [DECIDED] ADR-0005 |
+| Map apps              | `geo:` URI via `@capacitor/app-launcher`, user's map app (Google Maps, OsmAnd, …)             | [DECIDED] ADR-0005 |
 | Location service      | Not used by the app (map app determines location)                  | [DECIDED] ADR-0005 |
 | Lock screen           | Quick-Settings tile → native Activity shown over the lock screen     | [DECIDED] ADR-0006 |
 | Google Play           | Play Developer API, used by GitHub Actions for uploads              | [DECIDED] ADR-0008 |
@@ -151,7 +151,8 @@ flowchart TB
   subgraph Domain[Domain layer - TypeScript, framework independent]
     CardService
     ImportExport[Import/Export service]
-    ShopLocator[Shop locator]
+    ShopLocator[Shop search / links]
+    Launcher[ExternalLauncher port]
     BarcodeRenderer[BarcodeRenderer port]
     PresentationMode[PresentationMode port]
     Scanner[BarcodeScanner port]
@@ -162,7 +163,7 @@ flowchart TB
     Bwip[bwip-js barcode renderer]
     Screen[Brightness / keep-awake adapter]
     FileAdapter[File / share adapter]
-    MapAdapter[Map / URL launcher]
+    MapAdapter[Map / URL launcher - app-launcher]
     LockScreen[Lock-screen adapter - native]
   end
   UI --> Domain --> Infra

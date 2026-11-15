@@ -91,6 +91,149 @@
         <ion-item>
           <ion-toggle formControlName="showOnLockScreen">{{ t('fields.showOnLockScreen') }}</ion-toggle>
         </ion-item>
+
+        <ion-list-header>
+          <ion-label>{{ t('sections.appearance') }}</ion-label>
+        </ion-list-header>
+        <ion-item lines="none">
+          <app-card-avatar
+            slot="start"
+            data-testid="avatar-preview"
+            [storeName]="appearance().storeName"
+            [color]="appearance().color"
+            [icon]="appearance().icon"
+          />
+          <ion-label>{{ t('fields.color') }}</ion-label>
+        </ion-item>
+        <div class="swatches" role="radiogroup" [attr.aria-label]="t('fields.color')">
+          <button
+            type="button"
+            class="swatch auto"
+            role="radio"
+            [attr.aria-checked]="!appearance().color"
+            [attr.aria-label]="t('fields.colorAuto')"
+            (click)="selectColor('')"
+          >
+            <ion-icon name="color-wand-outline" aria-hidden="true" />
+          </button>
+          @for (color of colors; track color) {
+          <button
+            type="button"
+            class="swatch"
+            role="radio"
+            data-testid="color-swatch"
+            [style.background-color]="color"
+            [attr.aria-checked]="appearance().color === color"
+            [attr.aria-label]="color"
+            (click)="selectColor(color)"
+          ></button>
+          }
+        </div>
+        <ion-accordion-group>
+          <ion-accordion value="icon">
+            <ion-item slot="header">
+              <ion-label>{{ t('fields.icon') }}</ion-label>
+            </ion-item>
+            <div slot="content" class="icons" role="radiogroup" [attr.aria-label]="t('fields.icon')">
+              <ion-button
+                fill="clear"
+                role="radio"
+                [attr.aria-checked]="!appearance().icon"
+                [attr.aria-label]="t('fields.iconLetter')"
+                (click)="selectIcon('')"
+                ><span class="letter">{{ initialOf(appearance().storeName) }}</span></ion-button
+              >
+              @for (key of iconKeys; track key) {
+              <ion-button
+                fill="clear"
+                role="radio"
+                data-testid="icon-option"
+                [attr.aria-checked]="appearance().icon === key"
+                [attr.aria-label]="t('cardIcons.' + key)"
+                (click)="selectIcon(key)"
+                ><ion-icon slot="icon-only" [icon]="icons[key]" aria-hidden="true"
+              /></ion-button>
+              }
+            </div>
+          </ion-accordion>
+        </ion-accordion-group>
+
+        <ion-list-header>
+          <ion-label>{{ t('sections.tags') }}</ion-label>
+        </ion-list-header>
+        @if (tags().length) {
+        <ion-item>
+          <ion-select formControlName="tagIds" [multiple]="true" [label]="t('fields.tags')" labelPlacement="floating">
+            @for (tag of tags(); track tag.id) {
+            <ion-select-option [value]="tag.id">{{ tag.name }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+        }
+        <ion-item button [detail]="false" (click)="addTag()" data-testid="new-tag">
+          <ion-icon slot="start" name="add" aria-hidden="true" />
+          <ion-label>{{ t('fields.newTag') }}</ion-label>
+        </ion-item>
+
+        <ion-list-header>
+          <ion-label>{{ t('sections.links') }}</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            formControlName="homepageUrl"
+            type="url"
+            inputmode="url"
+            [label]="t('fields.homepageUrl')"
+            labelPlacement="floating"
+            [errorText]="t('errors.homepageUrlInvalid')"
+          />
+        </ion-item>
+        @for (site of websites(); track $index; let i = $index) {
+        <ion-item lines="none" data-testid="website-row">
+          <ion-input
+            [value]="site.label"
+            [label]="t('fields.websiteLabel')"
+            labelPlacement="floating"
+            (ionInput)="editWebsite(i, 'label', $event)"
+          />
+          <ion-button
+            slot="end"
+            fill="clear"
+            color="medium"
+            (click)="removeWebsite(i)"
+            [attr.aria-label]="t('fields.removeWebsite')"
+          >
+            <ion-icon slot="icon-only" name="close-circle-outline" />
+          </ion-button>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            [value]="site.url"
+            type="url"
+            inputmode="url"
+            [label]="t('fields.websiteUrl')"
+            labelPlacement="floating"
+            (ionInput)="editWebsite(i, 'url', $event)"
+          />
+        </ion-item>
+        } @if (websiteError()) {
+        <ion-item lines="none">
+          <ion-text color="danger" role="alert">{{ t('errors.websiteUrlInvalid') }}</ion-text>
+        </ion-item>
+        }
+        <ion-item button [detail]="false" (click)="addWebsite()" data-testid="add-website">
+          <ion-icon slot="start" name="add" aria-hidden="true" />
+          <ion-label>{{ t('fields.addWebsite') }}</ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            formControlName="shopSearchTerm"
+            [label]="t('fields.shopSearchTerm')"
+            labelPlacement="floating"
+            [placeholder]="appearance().storeName"
+            [helperText]="t('fields.shopSearchTermHint')"
+          />
+        </ion-item>
       </ion-list>
       <button type="submit" hidden></button>
     </form>

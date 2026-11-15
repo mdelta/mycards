@@ -15,21 +15,29 @@ describe('backup document', () => {
     expiry: '2027-01-01',
     balance: 1.23,
     balanceType: 'EUR',
-    color: '#FFF44336',
+    color: '#F44336',
     icon: 'cart',
     favorite: true,
     archived: true,
     showOnLockScreen: true,
     homepageUrl: 'https://example.com',
     shopSearchTerm: 'Store Berlin',
+    tagIds: ['t2', 't1'],
+    websites: [{ label: 'Shop', url: 'https://shop.example.com' }, { url: 'http://example.org' }],
     lastUsedAt: '2026-02-01T00:00:00.000Z',
   });
+
+  const tags = [
+    { id: 't1', name: 'Food' },
+    { id: 't2', name: 'Drugstore' },
+  ];
 
   function documentWith(overrides: Record<string, unknown>): string {
     return JSON.stringify({
       format: BACKUP_FORMAT,
       version: BACKUP_VERSION,
       exportedAt: 'now',
+      tags: [],
       cards: [],
       ...overrides,
     });
@@ -45,33 +53,88 @@ describe('backup document', () => {
   }
 
   it('round-trips cards with all fields', () => {
-    const json = serializeBackupDocument([fullCard, aCard({ id: 'min' })], '2026-11-14T12:00:00.000Z');
+    const content = { cards: [fullCard, aCard({ id: 'min' })], tags };
+    const json = serializeBackupDocument(content, '2026-11-14T12:00:00.000Z');
 
-    expect(parseBackupDocument(json)).toEqual([fullCard, aCard({ id: 'min' })]);
+    expect(parseBackupDocument(json)).toEqual(content);
   });
 
   it('writes format, version and export time', () => {
-    const document = JSON.parse(serializeBackupDocument([], '2026-11-14T12:00:00.000Z'));
+    const document = JSON.parse(serializeBackupDocument({ cards: [], tags: [] }, '2026-11-14T12:00:00.000Z'));
 
     expect(document).toEqual({
       format: 'mycards-backup',
-      version: 1,
+      version: 2,
       exportedAt: '2026-11-14T12:00:00.000Z',
+      tags: [],
       cards: [],
     });
   });
 
-  it('does not export tag ids yet, and imports cards without tags', () => {
-    const json = serializeBackupDocument([aCard({ tagIds: ['t1'] })], 'now');
+  it('still reads version 1 files, which have no tags and websites', () => {
+    const v1Card = { ...aCard(), tagIds: ['t1'], websites: [{ url: 'https://a.de' }] };
+    const json = documentWith({ version: 1, tags: undefined, cards: [v1Card] });
 
-    expect(JSON.parse(json).cards[0]).not.toHaveProperty('tagIds');
-    expect(parseBackupDocument(json)[0].tagIds).toEqual([]);
+    expect(parseBackupDocument(json)).toEqual({ cards: [aCard()], tags: [] });
+  });
+
+  it('drops version 1 colors and homepages that the app cannot use', () => {
+    const legacy = { ...aCard(), color: '#FFF44336', homepageUrl: 'intent://scan#Intent;end' };
+    const kept = { ...aCard({ id: 'kept' }), color: '#C62828', homepageUrl: 'https://a.de' };
+    const json = documentWith({ version: 1, tags: undefined, cards: [legacy, kept] });
+
+    expect(parseBackupDocument(json).cards).toEqual([aCard(), { ...kept, tagIds: [], websites: [] }]);
+  });
+
+  it('defaults missing tag ids and websites to empty lists', () => {
+    const { tagIds: _, websites: __, ...card } = aCard();
+
+    expect(parseBackupDocument(documentWith({ cards: [card] })).cards).toEqual([aCard()]);
+  });
+
+  it.each([
+    ['missing tags', { tags: undefined }],
+    ['a non-object tag', { tags: ['Food'] }],
+    ['a tag with an invalid id', { tags: [{ id: 'a/b', name: 'Food' }] }],
+    ['a tag without a name', { tags: [{ id: 't1', name: ' ' }] }],
+    [
+      'duplicate tag ids',
+      {
+        tags: [
+          { id: 't1', name: 'A' },
+          { id: 't1', name: 'B' },
+        ],
+      },
+    ],
+    [
+      'duplicate tag names',
+      {
+        tags: [
+          { id: 't1', name: 'Food' },
+          { id: 't2', name: 'food' },
+        ],
+      },
+    ],
+    ['an unknown tag id', { cards: [{ ...aCard(), tagIds: ['t9'] }] }],
+    ['a duplicate tag id on a card', { tags, cards: [{ ...aCard(), tagIds: ['t1', 't1'] }] }],
+    ['non-array tag ids', { tags, cards: [{ ...aCard(), tagIds: 't1' }] }],
+    ['a non-object website', { cards: [{ ...aCard(), websites: ['https://a.de'] }] }],
+    ['a website without URL', { cards: [{ ...aCard(), websites: [{ label: 'A' }] }] }],
+    ['a website with a non-text label', { cards: [{ ...aCard(), websites: [{ label: 1, url: 'https://a.de' }] }] }],
+    ['an invalid website URL', { cards: [{ ...aCard(), websites: [{ url: 'javascript:alert(1)' }] }] }],
+    ['an invalid homepage URL', { cards: [{ ...aCard(), homepageUrl: 'a.de' }] }],
+    ['an invalid color', { cards: [{ ...aCard(), color: '#FFF44336' }] }],
+  ])('rejects %s', (_, overrides) => {
+    expect(reasonOf(documentWith(overrides))).toBe('invalidContent');
   });
 
   it('ignores unknown fields', () => {
-    const card = { ...JSON.parse(serializeBackupDocument([aCard()], 'now')).cards[0], futureField: 1 };
+    const card = {
+      ...JSON.parse(serializeBackupDocument({ cards: [aCard()], tags: [] }, 'now')).cards[0],
+      futureField: 1,
+    };
 
-    expect(parseBackupDocument(documentWith({ cards: [card], other: true }))).toEqual([aCard()]);
+    expect(parseBackupDocument(documentWith({ cards: [card], other: true }))).toEqual({ cards: [aCard()], tags: [] });
   });
 
   it('rejects files from a newer app version', () => {

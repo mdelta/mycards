@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { InjectionToken, inject, makeEnvironmentProviders } from '@angular/core';
+import { AppLauncher } from '@capacitor/app-launcher';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -13,6 +14,7 @@ import type { BackupFiles } from '../domain/ports/backup-files';
 import type { BarcodeRenderer } from '../domain/ports/barcode-renderer';
 import type { BarcodeScanner } from '../domain/ports/barcode-scanner';
 import type { CardRepository } from '../domain/ports/card-repository';
+import type { ExternalLauncher } from '../domain/ports/external-launcher';
 import type { PresentationMode } from '../domain/ports/presentation-mode';
 import { BackupService } from '../domain/services/backup-service';
 import { CardService } from '../domain/services/card-service';
@@ -23,6 +25,8 @@ import { ZipJsArchiveCodec } from './backup/zipjs-archive-codec';
 import { BwipBarcodeRenderer } from './barcode/bwip-barcode-renderer';
 import { MlKitBarcodeScanner } from './barcode/mlkit-barcode-scanner';
 import { CapacitorPresentationMode } from './display/capacitor-presentation-mode';
+import { BrowserExternalLauncher } from './links/browser-external-launcher';
+import { CapacitorExternalLauncher } from './links/capacitor-external-launcher';
 import { CapacitorSqlDatabase } from './sqlite/capacitor-sql-database';
 import { migrate } from './sqlite/migrations';
 import { openConnection } from './sqlite/open-connection';
@@ -37,6 +41,14 @@ export const BARCODE_RENDERER = new InjectionToken<BarcodeRenderer>('BarcodeRend
 export const PRESENTATION_MODE = new InjectionToken<PresentationMode>('PresentationMode');
 export const BARCODE_SCANNER = new InjectionToken<BarcodeScanner>('BarcodeScanner');
 export const BACKUP_FILES = new InjectionToken<BackupFiles>('BackupFiles');
+/** Websites and shop search in other apps (F-06, ADR-0005). */
+export const EXTERNAL_LAUNCHER = new InjectionToken<ExternalLauncher>('ExternalLauncher', {
+  providedIn: 'root',
+  factory: () =>
+    Capacitor.isNativePlatform()
+      ? new CapacitorExternalLauncher(AppLauncher)
+      : new BrowserExternalLauncher(inject(DOCUMENT).defaultView!),
+});
 
 /** Wires the domain services to the platform adapters (composition root, arc42 5.2). */
 export function provideCardStorage(): EnvironmentProviders {
@@ -88,6 +100,7 @@ export function provideBackup(): EnvironmentProviders {
 export function backupServiceProvider(): Provider {
   return {
     provide: BackupService,
-    useFactory: () => new BackupService(inject(CARD_REPOSITORY), new ZipJsArchiveCodec(), new SystemClock()),
+    useFactory: () =>
+      new BackupService(inject(CARD_REPOSITORY), new ZipJsArchiveCodec(), new SystemClock(), new UuidGenerator()),
   };
 }

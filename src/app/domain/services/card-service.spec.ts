@@ -46,6 +46,7 @@ describe('CardService', () => {
         archived: false,
         showOnLockScreen: false,
         tagIds: [],
+        websites: [],
         createdAt: NOW,
         updatedAt: NOW,
       });
@@ -101,5 +102,46 @@ describe('CardService', () => {
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
     expect(await repository.findAll()).toHaveLength(1);
+  });
+
+  describe('tags', () => {
+    it('lists tags sorted by name', async () => {
+      repository = new InMemoryCardRepository(
+        [aCard({ id: 'a', tagIds: ['t1', 't2'] })],
+        [
+          { id: 't1', name: 'Zoo' },
+          { id: 't2', name: 'Apple' },
+        ],
+      );
+      service = new CardService(repository, clock, ids);
+
+      expect((await service.listTags()).map((tag) => tag.name)).toEqual(['Apple', 'Zoo']);
+    });
+
+    it('creates a new tag with a trimmed name', async () => {
+      const tag = await service.ensureTag('  Food ');
+
+      expect(tag.name).toBe('Food');
+      expect(await repository.findAllTags()).toEqual([tag]);
+    });
+
+    it('returns an existing tag with the same name, ignoring case', async () => {
+      const tag = await service.ensureTag('Food');
+
+      expect(await service.ensureTag('FOOD')).toEqual(tag);
+      expect(await repository.findAllTags()).toHaveLength(1);
+    });
+
+    it('rejects a blank tag name', async () => {
+      await expect(service.ensureTag('  ')).rejects.toThrow();
+    });
+
+    it('filters the card list by tag', async () => {
+      await repository.saveAll([aCard({ id: 'a', tagIds: ['t1'] }), aCard({ id: 'b' })], {
+        tags: [{ id: 't1', name: 'Food' }],
+      });
+
+      expect((await service.list('', 't1')).map((card) => card.id)).toEqual(['a']);
+    });
   });
 });

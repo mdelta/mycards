@@ -24,6 +24,8 @@ export interface Card {
   /** Search term for the shop search (ADR-0005); defaults to `storeName`. */
   shopSearchTerm?: string;
   tagIds: string[];
+  /** Further websites besides `homepageUrl` (F-06), in display order. */
+  websites: WebsiteLink[];
   createdAt: string;
   updatedAt: string;
   lastUsedAt?: string;
@@ -34,9 +36,7 @@ export interface Tag {
   name: string;
 }
 
-export interface Website {
-  id: string;
-  cardId: string;
+export interface WebsiteLink {
   label?: string;
   url: string;
 }

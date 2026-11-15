@@ -1,4 +1,4 @@
-import type { Card } from '../model/card';
+import type { Card, Tag } from '../model/card';
 import type { CardRepository } from '../ports/card-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
@@ -28,8 +28,30 @@ export class CardService {
     private readonly ids: IdGenerator,
   ) {}
 
-  async list(query = ''): Promise<Card[]> {
-    return filterCards(await this.repository.findAll(), query).sort(compareCards);
+  async list(query = '', tagId?: string): Promise<Card[]> {
+    return filterCards(await this.repository.findAll(), query, tagId).sort(compareCards);
+  }
+
+  /** Tags in use, sorted by name (F-07). */
+  async listTags(): Promise<Tag[]> {
+    return (await this.repository.findAllTags()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Returns the tag with this name (ignoring case), creating it if needed. */
+  async ensureTag(name: string): Promise<Tag> {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      throw new Error('Tag name is required');
+    }
+    const existing = (await this.repository.findAllTags()).find(
+      (tag) => tag.name.toLocaleLowerCase() === trimmed.toLocaleLowerCase(),
+    );
+    if (existing) {
+      return existing;
+    }
+    const tag = { id: this.ids.newId(), name: trimmed };
+    await this.repository.saveTag(tag);
+    return tag;
   }
 
   get(id: string): Promise<Card | undefined> {
@@ -45,6 +67,7 @@ export class CardService {
       archived: false,
       showOnLockScreen: false,
       tagIds: [],
+      websites: [],
       ...normalizeCardDraft(draft),
       id: this.ids.newId(),
       createdAt: now,
