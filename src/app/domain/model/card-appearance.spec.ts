@@ -32,7 +32,9 @@ describe('card appearance', () => {
     const color = cardColorOf({ storeName: 'Bakery' });
     expect(CARD_COLORS).toContain(color);
     expect(cardColorOf({ storeName: ' bakery ' })).toBe(color);
-    const colors = new Set(['Bakery', 'Pharmacy', 'Grocer', 'Cinema', 'Garden'].map((storeName) => cardColorOf({ storeName })));
+    const colors = new Set(
+      ['Bakery', 'Pharmacy', 'Grocer', 'Cinema', 'Garden'].map((storeName) => cardColorOf({ storeName })),
+    );
     expect(colors.size).toBeGreaterThan(1);
   });
 

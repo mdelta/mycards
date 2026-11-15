@@ -169,7 +169,9 @@ export class SqliteCardRepository implements CardRepository {
   private async websitesByCard(cardId?: string): Promise<Map<string, WebsiteLink[]>> {
     type Row = { card_id: string; label: string | null; url: string };
     const rows = cardId
-      ? await this.db.query<Row>('SELECT card_id, label, url FROM website WHERE card_id = ? ORDER BY position', [cardId])
+      ? await this.db.query<Row>('SELECT card_id, label, url FROM website WHERE card_id = ? ORDER BY position', [
+          cardId,
+        ])
       : await this.db.query<Row>('SELECT card_id, label, url FROM website ORDER BY card_id, position');
     const result = new Map<string, WebsiteLink[]>();
     for (const { card_id, label, url } of rows) {

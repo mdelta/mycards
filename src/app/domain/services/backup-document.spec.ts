@@ -89,8 +89,24 @@ describe('backup document', () => {
     ['a non-object tag', { tags: ['Food'] }],
     ['a tag with an invalid id', { tags: [{ id: 'a/b', name: 'Food' }] }],
     ['a tag without a name', { tags: [{ id: 't1', name: ' ' }] }],
-    ['duplicate tag ids', { tags: [{ id: 't1', name: 'A' }, { id: 't1', name: 'B' }] }],
-    ['duplicate tag names', { tags: [{ id: 't1', name: 'Food' }, { id: 't2', name: 'food' }] }],
+    [
+      'duplicate tag ids',
+      {
+        tags: [
+          { id: 't1', name: 'A' },
+          { id: 't1', name: 'B' },
+        ],
+      },
+    ],
+    [
+      'duplicate tag names',
+      {
+        tags: [
+          { id: 't1', name: 'Food' },
+          { id: 't2', name: 'food' },
+        ],
+      },
+    ],
     ['an unknown tag id', { cards: [{ ...aCard(), tagIds: ['t9'] }] }],
     ['a duplicate tag id on a card', { tags, cards: [{ ...aCard(), tagIds: ['t1', 't1'] }] }],
     ['non-array tag ids', { tags, cards: [{ ...aCard(), tagIds: 't1' }] }],
@@ -105,7 +121,10 @@ describe('backup document', () => {
   });
 
   it('ignores unknown fields', () => {
-    const card = { ...JSON.parse(serializeBackupDocument({ cards: [aCard()], tags: [] }, 'now')).cards[0], futureField: 1 };
+    const card = {
+      ...JSON.parse(serializeBackupDocument({ cards: [aCard()], tags: [] }, 'now')).cards[0],
+      futureField: 1,
+    };
 
     expect(parseBackupDocument(documentWith({ cards: [card], other: true }))).toEqual({ cards: [aCard()], tags: [] });
   });

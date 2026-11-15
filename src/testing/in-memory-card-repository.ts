@@ -37,7 +37,10 @@ export class InMemoryCardRepository implements CardRepository {
     this.deleteUnusedTags();
   }
 
-  async saveAll(cards: readonly Card[], options: { deleteOthers?: boolean; tags?: readonly Tag[] } = {}): Promise<void> {
+  async saveAll(
+    cards: readonly Card[],
+    options: { deleteOthers?: boolean; tags?: readonly Tag[] } = {},
+  ): Promise<void> {
     if (options.deleteOthers) {
       this.cards.clear();
       this.tags.clear();

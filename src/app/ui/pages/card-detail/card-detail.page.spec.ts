@@ -1,6 +1,7 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { ToastController } from '@ionic/angular';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 
 import en from '../../../../assets/i18n/en.json';
@@ -11,6 +12,7 @@ import { BwipBarcodeRenderer } from '../../../infrastructure/barcode/bwip-barcod
 import {
   BARCODE_RENDERER,
   CARD_REPOSITORY,
+  EXTERNAL_LAUNCHER,
   PRESENTATION_MODE,
   cardServiceProvider,
 } from '../../../infrastructure/providers';
@@ -21,6 +23,10 @@ describe('CardDetailPage', () => {
   let repository: InMemoryCardRepository;
   let fixture: ComponentFixture<CardDetailPage>;
   const presentation = { enter: vi.fn(async () => undefined), exit: vi.fn(async () => undefined) };
+  let launcherResult: boolean;
+  const launcher = { open: vi.fn(async () => launcherResult) };
+  const toast = { present: vi.fn() };
+  const toasts = { create: vi.fn(async () => toast) };
 
   async function show(id: string, renderer: BarcodeRenderer = new BwipBarcodeRenderer()): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
@@ -38,6 +44,8 @@ describe('CardDetailPage', () => {
         cardServiceProvider(),
         { provide: BARCODE_RENDERER, useValue: renderer },
         { provide: PRESENTATION_MODE, useValue: presentation },
+        { provide: EXTERNAL_LAUNCHER, useValue: launcher },
+        { provide: ToastController, useValue: toasts },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(CardDetailPage);
@@ -49,6 +57,7 @@ describe('CardDetailPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    launcherResult = true;
     repository = new InMemoryCardRepository([
       aCard({ id: 'ean', storeName: 'Bakery', cardId: '5901234123457', barcodeType: 'EAN_13' }),
       aCard({ id: 'plain', storeName: 'Pharmacy', cardId: '42', balance: 0, balanceType: 'points', note: 'Hi' }),
@@ -98,5 +107,70 @@ describe('CardDetailPage', () => {
     fixture.componentInstance.ionViewWillLeave();
 
     expect(presentation.exit).toHaveBeenCalled();
+  });
+
+  describe('tags and links', () => {
+    beforeEach(async () => {
+      await repository.saveAll(
+        [
+          aCard({
+            id: 'linked',
+            storeName: 'Bakery',
+            tagIds: ['t1'],
+            homepageUrl: 'https://bakery.example.com',
+            shopSearchTerm: 'Bakery Berlin',
+            websites: [{ label: 'Coupons', url: 'https://coupons.example.com' }],
+          }),
+        ],
+        { tags: [{ id: 't1', name: 'Food' }] },
+      );
+    });
+
+    it('shows the tags, the shop search, the homepage and the extra websites', async () => {
+      const element = await show('linked');
+
+      expect(element.textContent).toContain('Food');
+      expect(element.querySelector('[data-testid="shop-search"]')).not.toBeNull();
+      const sites = [...element.querySelectorAll('[data-testid="website"]')].map((item) => item.textContent);
+      expect(sites).toHaveLength(2);
+      expect(sites[0]).toContain('bakery.example.com');
+      expect(sites[1]).toContain('Coupons');
+    });
+
+    it('opens a website externally', async () => {
+      const element = await show('linked');
+
+      (element.querySelectorAll('[data-testid="website"]')[1] as HTMLElement).click();
+      await fixture.whenStable();
+
+      expect(launcher.open).toHaveBeenCalledWith('https://coupons.example.com');
+      expect(toasts.create).not.toHaveBeenCalled();
+    });
+
+    it('searches for the shop in the map app', async () => {
+      const element = await show('linked');
+
+      (element.querySelector('[data-testid="shop-search"]') as HTMLElement).click();
+      await fixture.whenStable();
+
+      expect(launcher.open).toHaveBeenCalledWith('geo:0,0?q=Bakery%20Berlin');
+    });
+
+    it('tells the user when no app can open a link', async () => {
+      launcherResult = false;
+      await show('linked');
+
+      await fixture.componentInstance.openUrl('https://bakery.example.com');
+
+      expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ message: en.cardDetail.openFailed }));
+      expect(toast.present).toHaveBeenCalled();
+    });
+
+    it('hides the link section for a card without links', async () => {
+      const element = await show('plain');
+
+      expect(element.querySelectorAll('[data-testid="website"]')).toHaveLength(0);
+      expect(element.querySelector('[data-testid="shop-search"]')).not.toBeNull();
+    });
   });
 });

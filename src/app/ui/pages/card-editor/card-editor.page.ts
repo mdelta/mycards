@@ -1,6 +1,6 @@
 import type { OnInit } from '@angular/core';
 import { Component, inject, input, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   AlertController,
@@ -29,6 +29,7 @@ import {
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { addIcons } from 'ionicons';
 import { add, closeCircleOutline, colorWandOutline, trash } from 'ionicons/icons';
+import { map } from 'rxjs';
 
 import type { BarcodeType } from '../../../domain/model/barcode-type';
 import { BARCODE_TYPES, isBarcodeType } from '../../../domain/model/barcode-type';
@@ -112,6 +113,10 @@ export class CardEditorPage implements OnInit {
     tagIds: new FormControl<string[]>([], { nonNullable: true }),
     homepageUrl: '',
     shopSearchTerm: '',
+  });
+  /** Form values the template previews live (avatar, palette and icon selection). */
+  readonly appearance = toSignal(this.form.valueChanges.pipe(map(() => this.form.getRawValue())), {
+    initialValue: this.form.getRawValue(),
   });
 
   constructor() {

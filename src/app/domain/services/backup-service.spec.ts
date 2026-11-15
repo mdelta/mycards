@@ -144,7 +144,10 @@ describe('BackupService', () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
     service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
 
-    await service.restoreBackup({ cards: [aCard({ id: 'b', tagIds: ['t2'] })], tags: [{ id: 't2', name: 'Food' }] }, { clean: true });
+    await service.restoreBackup(
+      { cards: [aCard({ id: 'b', tagIds: ['t2'] })], tags: [{ id: 't2', name: 'Food' }] },
+      { clean: true },
+    );
 
     expect(await repository.findAllTags()).toEqual([{ id: 't2', name: 'Food' }]);
   });

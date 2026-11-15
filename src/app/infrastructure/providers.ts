@@ -100,6 +100,7 @@ export function provideBackup(): EnvironmentProviders {
 export function backupServiceProvider(): Provider {
   return {
     provide: BackupService,
-    useFactory: () => new BackupService(inject(CARD_REPOSITORY), new ZipJsArchiveCodec(), new SystemClock(), new UuidGenerator()),
+    useFactory: () =>
+      new BackupService(inject(CARD_REPOSITORY), new ZipJsArchiveCodec(), new SystemClock(), new UuidGenerator()),
   };
 }

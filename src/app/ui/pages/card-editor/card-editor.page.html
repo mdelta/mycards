@@ -99,9 +99,9 @@
           <app-card-avatar
             slot="start"
             data-testid="avatar-preview"
-            [storeName]="form.controls.storeName.value"
-            [color]="form.controls.color.value"
-            [icon]="form.controls.icon.value"
+            [storeName]="appearance().storeName"
+            [color]="appearance().color"
+            [icon]="appearance().icon"
           />
           <ion-label>{{ t('fields.color') }}</ion-label>
         </ion-item>
@@ -110,7 +110,7 @@
             type="button"
             class="swatch auto"
             role="radio"
-            [attr.aria-checked]="!form.controls.color.value"
+            [attr.aria-checked]="!appearance().color"
             [attr.aria-label]="t('fields.colorAuto')"
             (click)="selectColor('')"
           >
@@ -123,7 +123,7 @@
             role="radio"
             data-testid="color-swatch"
             [style.background-color]="color"
-            [attr.aria-checked]="form.controls.color.value === color"
+            [attr.aria-checked]="appearance().color === color"
             [attr.aria-label]="color"
             (click)="selectColor(color)"
           ></button>
@@ -138,17 +138,17 @@
               <ion-button
                 fill="clear"
                 role="radio"
-                [attr.aria-checked]="!form.controls.icon.value"
+                [attr.aria-checked]="!appearance().icon"
                 [attr.aria-label]="t('fields.iconLetter')"
                 (click)="selectIcon('')"
-                ><span class="letter">{{ initialOf(form.controls.storeName.value) }}</span></ion-button
+                ><span class="letter">{{ initialOf(appearance().storeName) }}</span></ion-button
               >
               @for (key of iconKeys; track key) {
               <ion-button
                 fill="clear"
                 role="radio"
                 data-testid="icon-option"
-                [attr.aria-checked]="form.controls.icon.value === key"
+                [attr.aria-checked]="appearance().icon === key"
                 [attr.aria-label]="t('cardIcons.' + key)"
                 (click)="selectIcon(key)"
                 ><ion-icon slot="icon-only" [icon]="icons[key]" aria-hidden="true"
@@ -196,7 +196,13 @@
             labelPlacement="floating"
             (ionInput)="editWebsite(i, 'label', $event)"
           />
-          <ion-button slot="end" fill="clear" color="medium" (click)="removeWebsite(i)" [attr.aria-label]="t('fields.removeWebsite')">
+          <ion-button
+            slot="end"
+            fill="clear"
+            color="medium"
+            (click)="removeWebsite(i)"
+            [attr.aria-label]="t('fields.removeWebsite')"
+          >
             <ion-icon slot="icon-only" name="close-circle-outline" />
           </ion-button>
         </ion-item>
@@ -210,8 +216,7 @@
             (ionInput)="editWebsite(i, 'url', $event)"
           />
         </ion-item>
-        }
-        @if (websiteError()) {
+        } @if (websiteError()) {
         <ion-item lines="none">
           <ion-text color="danger" role="alert">{{ t('errors.websiteUrlInvalid') }}</ion-text>
         </ion-item>
@@ -225,7 +230,7 @@
             formControlName="shopSearchTerm"
             [label]="t('fields.shopSearchTerm')"
             labelPlacement="floating"
-            [placeholder]="form.controls.storeName.value"
+            [placeholder]="appearance().storeName"
             [helperText]="t('fields.shopSearchTermHint')"
           />
         </ion-item>

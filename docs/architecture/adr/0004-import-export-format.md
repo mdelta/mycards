@@ -28,7 +28,8 @@ Users of Catima should be able to switch to MyCards.
   app's cache folder (`@capacitor/filesystem`) and opens the Android share sheet
   (`@capacitor/share`), from which the user sends it to Google Drive, a files app, e-mail etc. No
   own "Save as" dialog, so no custom Kotlin plugin. The cache folder is emptied before each export.
-- [DECIDED] Own format version 1 and the import rules are specified in
+- [DECIDED] Own format (version 1 in step 5, version 2 with tags and websites in step 6) and the
+  import rules are specified in
   [formats/mycards-backup.md](../../formats/mycards-backup.md). The "clean import" setting is a
   switch on the export/import screen, off by default, and asks for confirmation.
 

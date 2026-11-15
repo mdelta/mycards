@@ -25,5 +25,14 @@ A card supports:
 ## Consequences
 
 - Domain model in arc42 section 5.1; DB schema (ADR-0003) and own export format (ADR-0004) follow it.
+- [DECIDED] (step 6) **Color:** a fixed palette of 12 colors with white text contrast of at least
+  4.5:1; without a chosen color, one is derived from the store name, so a card keeps its color.
+  Stored as `#RRGGBB`, so imported colors outside the palette still display.
+- [DECIDED] (step 6) **Icon:** the store's first letter on the card color by default; optionally an
+  icon from a built-in list of Ionic icons (stored as its key). A custom image as icon follows with
+  photos in step 7.
+- [DECIDED] (step 6) **Tags** are created in the card editor and filter the card list; tag names are
+  unique ignoring case, and tags no card uses are deleted. **Websites** are an ordered list of
+  optional label plus URL.
 - Fields without a Catima counterpart (e.g. homepage URL, further websites, lock-screen flag) are
   lost in Catima export; this is shown to the user.

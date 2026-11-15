@@ -6,7 +6,11 @@ import type { BackupContent } from './backup-document';
  * Prepares a normal (not clean) import: imported tags are matched to existing tags by name (ignoring
  * case), so no duplicates appear; an imported tag whose id is taken by another tag gets a new id.
  */
-export function mergeImportedTags(content: BackupContent, existing: readonly Tag[], newId: () => string): BackupContent {
+export function mergeImportedTags(
+  content: BackupContent,
+  existing: readonly Tag[],
+  newId: () => string,
+): BackupContent {
   const idsByName = new Map(existing.map((tag) => [tag.name.toLocaleLowerCase(), tag.id]));
   const takenIds = new Set(existing.map((tag) => tag.id));
   const idMap = new Map<string, string>();

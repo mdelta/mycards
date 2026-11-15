@@ -68,7 +68,11 @@ describe('normalizeCardDraft', () => {
     it('trims websites, drops empty rows and blank labels', () => {
       expect(
         normalizeCardDraft({
-          websites: [{ label: ' Shop ', url: ' https://a.de ' }, { label: ' ', url: '' }, { label: '  ', url: 'https://b.de' }],
+          websites: [
+            { label: ' Shop ', url: ' https://a.de ' },
+            { label: ' ', url: '' },
+            { label: '  ', url: 'https://b.de' },
+          ],
         }).websites,
       ).toEqual([{ label: 'Shop', url: 'https://a.de' }, { url: 'https://b.de' }]);
     });

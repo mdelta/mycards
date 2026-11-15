@@ -53,10 +53,7 @@ export function parseBackupDocument(json: string): BackupContent {
   }
   const tags = version >= TAGS_VERSION ? arrayOf(document['tags']).map(parseTag) : [];
   const tagIds = new Set(tags.map((tag) => tag.id));
-  if (
-    tagIds.size !== tags.length ||
-    new Set(tags.map((tag) => tag.name.toLocaleLowerCase())).size !== tags.length
-  ) {
+  if (tagIds.size !== tags.length || new Set(tags.map((tag) => tag.name.toLocaleLowerCase())).size !== tags.length) {
     throw new BackupError('invalidContent');
   }
   const cards = arrayOf(document['cards']).map((raw) => parseCard(raw, version, tagIds));

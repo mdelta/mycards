@@ -8,11 +8,11 @@ import { CARD_ICONS } from '../../card-icons';
 @Component({
   selector: 'app-card-avatar',
   template: `
-    <span class="avatar" [style.background-color]="color()" aria-hidden="true">
+    <span class="avatar" [style.background-color]="background()" aria-hidden="true">
       @if (iconData(); as icon) {
-      <ion-icon [icon]="icon" />
+        <ion-icon [icon]="icon" />
       } @else {
-      {{ initial() }}
+        {{ initial() }}
       }
     </span>
   `,
@@ -36,10 +36,10 @@ import { CARD_ICONS } from '../../card-icons';
 })
 export class CardAvatarComponent {
   readonly storeName = input.required<string>();
-  readonly cardColor = input<string | undefined>(undefined, { alias: 'color' });
+  readonly color = input<string | undefined>();
   readonly icon = input<string | undefined>();
 
-  readonly color = computed(() => cardColorOf({ storeName: this.storeName(), color: this.cardColor() || undefined }));
+  readonly background = computed(() => cardColorOf({ storeName: this.storeName(), color: this.color() || undefined }));
   readonly initial = computed(() => cardInitialOf(this.storeName()));
   readonly iconData = computed(() => {
     const key = this.icon();
