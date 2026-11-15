@@ -19,6 +19,7 @@ import {
   provideCardPresentation,
   provideCardScanning,
   provideCardStorage,
+  providePhotos,
 } from './app/infrastructure/providers';
 
 bootstrapApplication(AppComponent, {
@@ -31,6 +32,7 @@ bootstrapApplication(AppComponent, {
     provideCardPresentation(),
     provideCardScanning(),
     provideBackup(),
+    providePhotos(),
     provideTransloco({
       config: {
         availableLangs: ['en'],

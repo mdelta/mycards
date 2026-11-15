@@ -1,7 +1,9 @@
 import { BackupError } from '../model/backup-error';
 import { isBarcodeType } from '../model/barcode-type';
-import type { Card, Tag, WebsiteLink } from '../model/card';
+import type { Card, Photo, Tag, WebsiteLink } from '../model/card';
+import { PHOTO_ROLES } from '../model/card';
 import { isCardColor } from '../model/card-appearance';
+import { arePhotosValid } from '../model/photo';
 
 import { validateCardDraft } from './card-draft';
 import { isWebUrl } from './links';
@@ -17,6 +19,12 @@ const TAGS_VERSION = 2;
 export interface BackupContent {
   cards: Card[];
   tags: Tag[];
+  /** Photo files by photo id, stored as `photos/<id>.jpg` in the archive. */
+  photos?: ReadonlyMap<string, Uint8Array>;
+}
+
+export function photoEntryName(id: string): string {
+  return `photos/${id}.jpg`;
 }
 
 /** Ids appear in routes (`/cards/:id`); `new` is the creation route. */
@@ -40,6 +48,7 @@ const FLAGS = ['favorite', 'archived', 'showOnLockScreen'] as const;
 
 export function serializeBackupDocument(content: BackupContent, exportedAt: string): string {
   const { cards, tags } = content;
+  // Photo files travel next to the document, not inside it.
   return JSON.stringify({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt, tags, cards }, null, 2);
 }
 
@@ -59,7 +68,8 @@ export function parseBackupDocument(json: string): BackupContent {
     throw new BackupError('invalidContent');
   }
   const cards = arrayOf(document['cards']).map((raw) => parseCard(raw, version, tagIds));
-  if (new Set(cards.map((card) => card.id)).size !== cards.length) {
+  const photoIds = cards.flatMap((card) => card.photos.map((photo) => photo.id));
+  if (new Set(cards.map((card) => card.id)).size !== cards.length || new Set(photoIds).size !== photoIds.length) {
     throw new BackupError('invalidContent');
   }
   return { cards, tags };
@@ -75,6 +85,18 @@ function parseTag(raw: unknown): Tag {
     throw new BackupError('invalidContent');
   }
   return { id, name };
+}
+
+function parsePhoto(raw: unknown): Photo {
+  if (!isRecord(raw)) {
+    throw new BackupError('invalidContent');
+  }
+  const id = ofType(raw['id'], 'string') as string;
+  const role = ofType(raw['role'], 'string') as Photo['role'];
+  if (!isValidId(id) || !PHOTO_ROLES.includes(role)) {
+    throw new BackupError('invalidContent');
+  }
+  return { id, role };
 }
 
 function parseWebsite(raw: unknown): WebsiteLink {
@@ -99,7 +121,7 @@ function parseCard(raw: unknown, version: number, tagIds: ReadonlySet<string>): 
   if (!isRecord(raw)) {
     throw new BackupError('invalidContent');
   }
-  const card: Record<string, unknown> = { tagIds: [], websites: [] };
+  const card: Record<string, unknown> = { tagIds: [], websites: [], photos: [] };
   if (version >= TAGS_VERSION) {
     const ids = arrayOf(raw['tagIds'] ?? []).map((id) => ofType(id, 'string') as string);
     if (new Set(ids).size !== ids.length || ids.some((id) => !tagIds.has(id))) {
@@ -107,6 +129,7 @@ function parseCard(raw: unknown, version: number, tagIds: ReadonlySet<string>): 
     }
     card['tagIds'] = ids;
     card['websites'] = arrayOf(raw['websites'] ?? []).map(parseWebsite);
+    card['photos'] = arrayOf(raw['photos'] ?? []).map(parsePhoto);
   }
   for (const field of REQUIRED_TEXT) {
     card[field] = ofType(raw[field], 'string');
@@ -133,7 +156,7 @@ function parseCard(raw: unknown, version: number, tagIds: ReadonlySet<string>): 
     dropLegacyValues(card);
   }
   const result = card as unknown as Card;
-  if (!isValidId(result.id) || validateCardDraft(result).length) {
+  if (!isValidId(result.id) || !arePhotosValid(result.photos) || validateCardDraft(result).length) {
     throw new BackupError('invalidContent');
   }
   return result;

@@ -52,7 +52,8 @@
       "websiteLabel": "Label (optional)",
       "websiteUrl": "Website (https://…)",
       "addWebsite": "Add website",
-      "removeWebsite": "Remove website"
+      "removeWebsite": "Remove website",
+      "iconImage": "Custom image"
     },
     "errors": {
       "storeNameRequired": "Store name is required.",
@@ -67,7 +68,8 @@
     "sections": {
       "appearance": "Appearance",
       "tags": "Tags",
-      "links": "Links"
+      "links": "Links",
+      "photos": "Photos"
     },
     "ok": "OK",
     "cardIcons": {
@@ -111,6 +113,15 @@
       "ticket": "Ticket",
       "cash": "Cash",
       "heart": "Heart"
+    },
+    "photos": {
+      "front": "Front",
+      "back": "Back",
+      "icon": "Custom image",
+      "take": "Take photo",
+      "choose": "Choose from gallery",
+      "remove": "Remove photo",
+      "failed": "The photo could not be loaded."
     }
   },
   "cardDetail": {
@@ -126,7 +137,12 @@
     "tags": "Tags",
     "findShop": "Find shop on map",
     "homepage": "Homepage",
-    "openFailed": "No app found to open this link."
+    "openFailed": "No app found to open this link.",
+    "photos": {
+      "front": "Front of the card",
+      "back": "Back of the card",
+      "other": "Photo of the card"
+    }
   },
   "backup": {
     "title": "Export and import",

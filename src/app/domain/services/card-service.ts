@@ -68,6 +68,7 @@ export class CardService {
       showOnLockScreen: false,
       tagIds: [],
       websites: [],
+      photos: [],
       ...normalizeCardDraft(draft),
       id: this.ids.newId(),
       createdAt: now,

@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { InjectionToken, inject, makeEnvironmentProviders } from '@angular/core';
 import { AppLauncher } from '@capacitor/app-launcher';
+import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -15,9 +16,11 @@ import type { BarcodeRenderer } from '../domain/ports/barcode-renderer';
 import type { BarcodeScanner } from '../domain/ports/barcode-scanner';
 import type { CardRepository } from '../domain/ports/card-repository';
 import type { ExternalLauncher } from '../domain/ports/external-launcher';
+import type { PhotoStore } from '../domain/ports/photo-store';
 import type { PresentationMode } from '../domain/ports/presentation-mode';
 import { BackupService } from '../domain/services/backup-service';
 import { CardService } from '../domain/services/card-service';
+import { PhotoService } from '../domain/services/photo-service';
 
 import { BrowserBackupFiles } from './backup/browser-backup-files';
 import { CapacitorBackupFiles } from './backup/capacitor-backup-files';
@@ -27,6 +30,9 @@ import { MlKitBarcodeScanner } from './barcode/mlkit-barcode-scanner';
 import { CapacitorPresentationMode } from './display/capacitor-presentation-mode';
 import { BrowserExternalLauncher } from './links/browser-external-launcher';
 import { CapacitorExternalLauncher } from './links/capacitor-external-launcher';
+import { CanvasImageProcessor } from './photos/canvas-image-processor';
+import { CapacitorPhotoSource } from './photos/capacitor-photo-source';
+import { FilesystemPhotoStore } from './photos/filesystem-photo-store';
 import { CapacitorSqlDatabase } from './sqlite/capacitor-sql-database';
 import { migrate } from './sqlite/migrations';
 import { openConnection } from './sqlite/open-connection';
@@ -48,6 +54,12 @@ export const EXTERNAL_LAUNCHER = new InjectionToken<ExternalLauncher>('ExternalL
     Capacitor.isNativePlatform()
       ? new CapacitorExternalLauncher(AppLauncher)
       : new BrowserExternalLauncher(inject(DOCUMENT).defaultView!),
+});
+
+/** Photo files in the app sandbox (F-09, ADR-0003). */
+export const PHOTO_STORE = new InjectionToken<PhotoStore>('PhotoStore', {
+  providedIn: 'root',
+  factory: () => new FilesystemPhotoStore(Filesystem),
 });
 
 /** Wires the domain services to the platform adapters (composition root, arc42 5.2). */
@@ -72,6 +84,26 @@ export function provideCardScanning(): EnvironmentProviders {
   return makeEnvironmentProviders([
     { provide: BARCODE_SCANNER, useFactory: () => new MlKitBarcodeScanner(MlKitPlugin, Capacitor.isNativePlatform()) },
   ]);
+}
+
+/** Card photos and custom icon images (F-09, ADR-0003). */
+export function providePhotos(): EnvironmentProviders {
+  return makeEnvironmentProviders([photoServiceProvider()]);
+}
+
+/** `PhotoService` on top of whatever `CARD_REPOSITORY` and `PHOTO_STORE` are provided. */
+export function photoServiceProvider(): Provider {
+  return {
+    provide: PhotoService,
+    useFactory: () =>
+      new PhotoService(
+        new CapacitorPhotoSource(Camera),
+        new CanvasImageProcessor(inject(DOCUMENT)),
+        inject(PHOTO_STORE),
+        inject(CARD_REPOSITORY),
+        new UuidGenerator(),
+      ),
+  };
 }
 
 /** `CardService` on top of whatever `CARD_REPOSITORY` is provided (tests provide a fake). */
@@ -101,6 +133,12 @@ export function backupServiceProvider(): Provider {
   return {
     provide: BackupService,
     useFactory: () =>
-      new BackupService(inject(CARD_REPOSITORY), new ZipJsArchiveCodec(), new SystemClock(), new UuidGenerator()),
+      new BackupService(
+        inject(CARD_REPOSITORY),
+        new ZipJsArchiveCodec(),
+        new SystemClock(),
+        new UuidGenerator(),
+        inject(PHOTO_STORE),
+      ),
   };
 }

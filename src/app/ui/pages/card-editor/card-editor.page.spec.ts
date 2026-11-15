@@ -1,13 +1,15 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
-import { AlertController, NavController } from '@ionic/angular';
+import { ActionSheetController, AlertController, NavController, ToastController } from '@ionic/angular';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 
 import en from '../../../../assets/i18n/en.json';
 import { aCard } from '../../../../testing/card-builder';
 import { InMemoryCardRepository } from '../../../../testing/in-memory-card-repository';
+import { InMemoryPhotoStore } from '../../../../testing/in-memory-photo-store';
 import { CardService } from '../../../domain/services/card-service';
-import { CARD_REPOSITORY, cardServiceProvider } from '../../../infrastructure/providers';
+import { PhotoService } from '../../../domain/services/photo-service';
+import { CARD_REPOSITORY, PHOTO_STORE, cardServiceProvider } from '../../../infrastructure/providers';
 
 import { CardEditorPage } from './card-editor.page';
 
@@ -25,6 +27,21 @@ describe('CardEditorPage', () => {
     })),
   };
 
+  let sheetData: unknown;
+  const actionSheets = {
+    create: vi.fn(async (_options: { buttons: { text: string }[] }) => ({
+      present: async () => undefined,
+      onDidDismiss: async () => ({ data: sheetData }),
+    })),
+  };
+  const toast = { present: vi.fn() };
+  const toasts = { create: vi.fn(async (_options: unknown) => toast) };
+  const photoService = {
+    capture: vi.fn(async (): Promise<string | undefined> => 'p-new'),
+    pruneUnused: vi.fn(async () => undefined),
+  };
+  let photoStore: InMemoryPhotoStore;
+
   async function setUp(id?: string, inputs: Record<string, string> = {}): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
@@ -40,6 +57,10 @@ describe('CardEditorPage', () => {
         cardServiceProvider(),
         { provide: NavController, useValue: nav },
         { provide: AlertController, useValue: alertController },
+        { provide: ActionSheetController, useValue: actionSheets },
+        { provide: ToastController, useValue: toasts },
+        { provide: PhotoService, useValue: photoService },
+        { provide: PHOTO_STORE, useValue: photoStore },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(CardEditorPage);
@@ -58,6 +79,8 @@ describe('CardEditorPage', () => {
 
   beforeEach(() => {
     repository = new InMemoryCardRepository();
+    photoStore = new InMemoryPhotoStore({ p1: new Uint8Array([0xff, 0xd8]) });
+    sheetData = undefined;
     dismissData = undefined;
     vi.clearAllMocks();
   });
@@ -360,6 +383,97 @@ describe('CardEditorPage', () => {
       await page.addTag();
 
       expect(page.tags()).toHaveLength(1);
+    });
+  });
+
+  describe('photos', () => {
+    const element = (): HTMLElement => fixture.nativeElement as HTMLElement;
+
+    async function render(): Promise<void> {
+      for (let i = 0; i < 3; i++) {
+        fixture.detectChanges();
+        await fixture.whenStable();
+      }
+    }
+
+    it('adds a front photo from the camera, saves it and deletes unused photo files', async () => {
+      await setUp();
+      page.form.patchValue({ storeName: 'Bakery', cardId: '1' });
+      sheetData = 'camera';
+
+      await page.editPhoto('front');
+      await page.save();
+
+      expect(photoService.capture).toHaveBeenCalledWith('camera', 'photo');
+      expect((await repository.findAll())[0].photos).toEqual([{ id: 'p-new', role: 'front' }]);
+      expect(photoService.pruneUnused).toHaveBeenCalled();
+    });
+
+    it('shows stored photos as thumbnails and offers to remove them', async () => {
+      await repository.save(aCard({ id: 'c', photos: [{ id: 'p1', role: 'front' }] }));
+      await setUp('c');
+      await render();
+
+      expect(element().querySelector('[data-testid="photo-front"] img')?.getAttribute('src')).toBe(
+        'data:image/jpeg;base64,/9g=',
+      );
+      expect(element().querySelector('[data-testid="photo-back"] img')).toBeNull();
+
+      sheetData = 'remove';
+      await page.editPhoto('front');
+
+      expect(actionSheets.create.mock.calls[0][0].buttons.map((button) => button.text)).toEqual([
+        'Take photo',
+        'Choose from gallery',
+        'Remove photo',
+        'Cancel',
+      ]);
+      expect(page.photos()).toEqual([]);
+    });
+
+    it('does not offer removing a missing photo', async () => {
+      await setUp();
+
+      await page.editPhoto('back');
+
+      expect(actionSheets.create.mock.calls[0][0].buttons.map((button) => button.text)).not.toContain('Remove photo');
+    });
+
+    it('sets a custom icon image instead of a built-in icon, and back', async () => {
+      await setUp();
+      page.selectIcon('cafe');
+      sheetData = 'gallery';
+
+      await page.editPhoto('icon');
+
+      expect(photoService.capture).toHaveBeenCalledWith('gallery', 'icon');
+      expect(page.photoIdOf('icon')).toBe('p-new');
+      expect(page.form.controls.icon.value).toBe('');
+
+      page.selectIcon('cafe');
+      expect(page.photoIdOf('icon')).toBeUndefined();
+    });
+
+    it('changes nothing when the user cancels', async () => {
+      await setUp();
+      await page.editPhoto('front');
+      expect(photoService.capture).not.toHaveBeenCalled();
+
+      sheetData = 'camera';
+      photoService.capture.mockResolvedValueOnce(undefined);
+      await page.editPhoto('front');
+      expect(page.photos()).toEqual([]);
+    });
+
+    it('reports a photo that cannot be loaded', async () => {
+      await setUp();
+      sheetData = 'camera';
+      photoService.capture.mockRejectedValueOnce(new Error('decode failed'));
+
+      await page.editPhoto('front');
+
+      expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ message: en.cardEditor.photos.failed }));
+      expect(page.photos()).toEqual([]);
     });
   });
 });

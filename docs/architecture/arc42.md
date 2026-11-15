@@ -179,7 +179,7 @@ device and independent of the chosen framework.
 | Card     | id, store name, card ID (number shown to humans), barcode value (if different from card ID), barcode type, note, valid from, expiry date, balance + balance type/currency, color, icon, favorite, archived, showOnLockScreen, homepage URL, shop search term (default = store name), created/updated, last used |
 | Tag      | id, name (n:m with Card; corresponds to Catima groups) |
 | Website  | id, cardId, label, URL (further links besides the homepage) |
-| Photo    | id, cardId, role (front/back/icon/other), file reference |
+| Photo    | id, cardId, role (front/back/icon/other), position; file `photos/<id>.jpg` (ADR-0003) |
 
 The exact Catima field list is verified against real Catima export files before implementation
 (ADR-0016).
@@ -348,7 +348,7 @@ Scenarios derived from the prioritized quality goals in section 1.2.
 
 | Risk | Mitigation |
 |------|------------|
-| Auto Backup has a per-app size quota (documented by Google as 25 MB); many photos may exceed it and the backup then stops | Compress/limit photo size; exclude regenerable files; manual export remains the primary backup |
+| Auto Backup has a per-app size quota (documented by Google as 25 MB); many photos may exceed it and the backup then stops | Photos shrunk to ≤ 1600 px, JPEG 80 % (ADR-0003); exclude regenerable files; manual export remains the primary backup |
 | ML Kit depends on Google libraries/Play services – app not suitable for F-Droid / de-Googled devices | Accepted (ADR-0010) |
 | ML Kit sends usage metrics (device info, app version, per-installation ID, events, errors – no images or barcode values) to Google; no documented opt-out | Accepted and disclosed in privacy policy and Data-safety form (ADR-0010) |
 | Lock-screen feature needs native Kotlin and may behave differently across vendors / Android versions | Keep it optional, isolate in a small plugin, prototype (spike) early on real devices |

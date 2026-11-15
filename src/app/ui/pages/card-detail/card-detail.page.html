@@ -95,7 +95,10 @@
       </ion-item>
       }
     </ion-list>
-    } @else if (loaded()) {
+
+    @for (photo of card.photos; track photo.id) { @if (photo.role !== 'icon') {
+    <img class="photo" data-testid="photo" [src]="photo.id | photoUrl | async" [alt]="t('photos.' + photo.role)" />
+    } } } @else if (loaded()) {
     <ion-text color="medium"><p>{{ t('notFound') }}</p></ion-text>
     }
   </ion-content>

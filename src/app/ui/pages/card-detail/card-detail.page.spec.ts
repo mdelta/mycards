@@ -7,12 +7,14 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import en from '../../../../assets/i18n/en.json';
 import { aCard } from '../../../../testing/card-builder';
 import { InMemoryCardRepository } from '../../../../testing/in-memory-card-repository';
+import { InMemoryPhotoStore } from '../../../../testing/in-memory-photo-store';
 import type { BarcodeRenderer } from '../../../domain/ports/barcode-renderer';
 import { BwipBarcodeRenderer } from '../../../infrastructure/barcode/bwip-barcode-renderer';
 import {
   BARCODE_RENDERER,
   CARD_REPOSITORY,
   EXTERNAL_LAUNCHER,
+  PHOTO_STORE,
   PRESENTATION_MODE,
   cardServiceProvider,
 } from '../../../infrastructure/providers';
@@ -46,6 +48,10 @@ describe('CardDetailPage', () => {
         { provide: PRESENTATION_MODE, useValue: presentation },
         { provide: EXTERNAL_LAUNCHER, useValue: launcher },
         { provide: ToastController, useValue: toasts },
+        {
+          provide: PHOTO_STORE,
+          useValue: new InMemoryPhotoStore({ f: new Uint8Array([1]), b: new Uint8Array([2]), i: new Uint8Array([3]) }),
+        },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(CardDetailPage);
@@ -181,5 +187,26 @@ describe('CardDetailPage', () => {
       expect(element.querySelectorAll('[data-testid="website"]')).toHaveLength(0);
       expect(element.querySelector('[data-testid="shop-search"]')).not.toBeNull();
     });
+  });
+
+  it('shows the photos below the details, but not the icon image', async () => {
+    const photos = [
+      { id: 'i', role: 'icon' as const },
+      { id: 'f', role: 'front' as const },
+      { id: 'b', role: 'back' as const },
+    ];
+    await repository.save(aCard({ id: 'photos', photos }));
+    const element = await show('photos');
+    for (let i = 0; i < 3; i++) {
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    const images = [...element.querySelectorAll('[data-testid="photo"]')];
+    expect(images.map((img) => img.getAttribute('alt'))).toEqual(['Front of the card', 'Back of the card']);
+    expect(images.map((img) => img.getAttribute('src'))).toEqual([
+      'data:image/jpeg;base64,AQ==',
+      'data:image/jpeg;base64,Ag==',
+    ]);
   });
 });

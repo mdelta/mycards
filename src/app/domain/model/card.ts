@@ -26,6 +26,8 @@ export interface Card {
   tagIds: string[];
   /** Further websites besides `homepageUrl` (F-06), in display order. */
   websites: WebsiteLink[];
+  /** Photos (F-09) and the custom icon image, in display order. */
+  photos: Photo[];
   createdAt: string;
   updatedAt: string;
   lastUsedAt?: string;
@@ -41,12 +43,12 @@ export interface WebsiteLink {
   url: string;
 }
 
-export type PhotoRole = 'front' | 'back' | 'icon' | 'other';
+export const PHOTO_ROLES = ['front', 'back', 'icon', 'other'] as const;
+/** `front`, `back` and `icon` occur at most once per card; `other` any number of times. */
+export type PhotoRole = (typeof PHOTO_ROLES)[number];
 
+/** A card photo; the image is a JPEG file in the app sandbox named after `id` (ADR-0003). */
 export interface Photo {
   id: string;
-  cardId: string;
   role: PhotoRole;
-  /** Reference to the file in the app sandbox (ADR-0003). */
-  fileRef: string;
 }

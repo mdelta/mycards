@@ -43,4 +43,11 @@ describe('CardAvatarComponent', () => {
   it('falls back to the letter for an unknown icon', () => {
     expect(render({ storeName: 'Bakery', icon: 'unknown' }).textContent?.trim()).toBe('B');
   });
+
+  it('shows a custom image instead of an icon or the letter', () => {
+    const avatar = render({ storeName: 'Bakery', icon: 'cafe', image: 'data:image/jpeg;base64,AQ==' });
+
+    expect(avatar.querySelector('img')?.getAttribute('src')).toBe('data:image/jpeg;base64,AQ==');
+    expect(avatar.querySelector('ion-icon')).toBeNull();
+  });
 });

@@ -1,5 +1,6 @@
 import { aCard } from '../../../testing/card-builder';
 import { InMemoryCardRepository } from '../../../testing/in-memory-card-repository';
+import { InMemoryPhotoStore } from '../../../testing/in-memory-photo-store';
 import { BackupError } from '../model/backup-error';
 import type { ArchiveCodec } from '../ports/archive-codec';
 import type { BinaryFile } from '../ports/backup-files';
@@ -27,11 +28,13 @@ describe('BackupService', () => {
   let repository: InMemoryCardRepository;
   let archive: FakeArchiveCodec;
   let service: BackupService;
+  let photos: InMemoryPhotoStore;
 
   beforeEach(() => {
     repository = new InMemoryCardRepository([aCard({ id: 'a' }), aCard({ id: 'b', storeName: 'Bravo' })]);
     archive = new FakeArchiveCodec();
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+    photos = new InMemoryPhotoStore();
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
   });
 
   function documentEntry(json: string): BinaryFile {
@@ -72,7 +75,11 @@ describe('BackupService', () => {
       documentEntry(serializeBackupDocument({ cards: [aCard({ id: 'x' })], tags: [] }, now)),
     ];
 
-    expect(await service.readBackup(new Uint8Array())).toEqual({ cards: [aCard({ id: 'x' })], tags: [] });
+    expect(await service.readBackup(new Uint8Array())).toEqual({
+      cards: [aCard({ id: 'x' })],
+      tags: [],
+      photos: new Map(),
+    });
     expect((await repository.findAll()).map((card) => card.id)).toEqual(['a', 'b']);
   });
 
@@ -109,7 +116,7 @@ describe('BackupService', () => {
 
   it('exports tags with the cards', async () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
 
     await service.createBackup();
 
@@ -120,7 +127,7 @@ describe('BackupService', () => {
 
   it('normal import reuses existing tags with the same name', async () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
 
     await service.restoreBackup(
       {
@@ -142,7 +149,7 @@ describe('BackupService', () => {
 
   it('clean import replaces all tags', async () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
 
     await service.restoreBackup(
       { cards: [aCard({ id: 'b', tagIds: ['t2'] })], tags: [{ id: 't2', name: 'Food' }] },
@@ -150,5 +157,61 @@ describe('BackupService', () => {
     );
 
     expect(await repository.findAllTags()).toEqual([{ id: 't2', name: 'Food' }]);
+  });
+
+  describe('photos', () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 1]);
+
+    function useCards(...cards: ReturnType<typeof aCard>[]): void {
+      repository = new InMemoryCardRepository(cards);
+      service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
+    }
+
+    it('exports photo files next to the document', async () => {
+      photos = new InMemoryPhotoStore({ p1: jpeg });
+      useCards(aCard({ id: 'a', photos: [{ id: 'p1', role: 'front' }] }));
+
+      await service.createBackup();
+
+      expect(archive.packed?.entries.map((entry) => entry.name)).toEqual([BACKUP_DOCUMENT_NAME, 'photos/p1.jpg']);
+      expect(archive.packed?.entries[1].data).toEqual(jpeg);
+    });
+
+    it('leaves out photos whose file is missing', async () => {
+      useCards(aCard({ id: 'a', photos: [{ id: 'gone', role: 'front' }] }));
+
+      await service.createBackup();
+
+      const json = JSON.parse(new TextDecoder().decode(archive.packed!.entries[0].data));
+      expect(json.cards[0].photos).toEqual([]);
+      expect(archive.packed?.entries).toHaveLength(1);
+    });
+
+    it('reads the photo files of a backup', async () => {
+      const card = aCard({ id: 'x', photos: [{ id: 'p1', role: 'back' }] });
+      archive.entries = [
+        documentEntry(serializeBackupDocument({ cards: [card], tags: [] }, now)),
+        { name: 'photos/p1.jpg', data: jpeg },
+      ];
+
+      expect((await service.readBackup(new Uint8Array())).photos).toEqual(new Map([['p1', jpeg]]));
+    });
+
+    it('rejects a backup that lacks a referenced photo file', async () => {
+      const card = aCard({ id: 'x', photos: [{ id: 'p1', role: 'back' }] });
+      archive.entries = [documentEntry(serializeBackupDocument({ cards: [card], tags: [] }, now))];
+
+      expect(await reasonOf(service.readBackup(new Uint8Array()))).toBe('invalidContent');
+    });
+
+    it('writes imported photo files and deletes files no card uses any more', async () => {
+      photos = new InMemoryPhotoStore({ old: jpeg });
+      useCards(aCard({ id: 'a', photos: [{ id: 'old', role: 'front' }] }));
+      const imported = aCard({ id: 'b', photos: [{ id: 'new', role: 'front' }] });
+
+      await service.restoreBackup({ cards: [imported], tags: [], photos: new Map([['new', jpeg]]) }, { clean: true });
+
+      expect(await photos.list()).toEqual(['new']);
+    });
   });
 });

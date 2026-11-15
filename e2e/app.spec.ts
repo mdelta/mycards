@@ -185,3 +185,45 @@ test('adds tags, color, icon and links, filters by tag and opens links', async (
   await detail(page).getByTestId('shop-search').click();
   await (await mapPopup).waitForURL('https://www.openstreetmap.org/search?query=Bakery');
 });
+
+/** A 4 × 2 px PNG (left half red, right half blue). */
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAE0lEQVR4nGP4z8AARGDiPwMyBwBnsgf5Q2OaZwAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+async function chooseImage(page: Page, slot: string): Promise<void> {
+  await page.getByTestId(slot).click();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Choose from gallery' }).click();
+  await (await chooser).setFiles({ name: 'card.png', mimeType: 'image/png', buffer: PNG });
+}
+
+test('adds front and back photos and a custom icon image', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Add card' }).click();
+  await field(page, 'Store name').fill('Bakery');
+  await field(page, 'Card ID').fill('111');
+
+  await chooseImage(page, 'photo-front');
+  await expect(page.getByTestId('photo-front').locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
+  await chooseImage(page, 'photo-back');
+  await page.getByText('Icon', { exact: true }).click();
+  await chooseImage(page, 'icon-image');
+  await expect(page.getByTestId('avatar-preview').locator('img')).toBeVisible();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(cardNames(page)).toHaveText(['Bakery']);
+
+  await page.reload();
+  await expect(page.getByTestId('card-item').locator('app-card-avatar img')).toBeVisible();
+  await cardNames(page).filter({ hasText: 'Bakery' }).click();
+  await expect(detail(page).getByTestId('photo')).toHaveCount(2);
+  await expect(detail(page).getByAltText('Back of the card')).toBeVisible();
+
+  await detail(page).getByLabel('Edit', { exact: true }).click();
+  await page.getByTestId('photo-back').click();
+  await page.getByRole('button', { name: 'Remove photo' }).click();
+  await expect(page.getByTestId('photo-back').locator('img')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(detail(page).getByTestId('photo')).toHaveCount(1);
+});

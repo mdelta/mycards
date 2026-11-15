@@ -29,8 +29,11 @@ A card supports:
   4.5:1; without a chosen color, one is derived from the store name, so a card keeps its color.
   Stored as `#RRGGBB`, so imported colors outside the palette still display.
 - [DECIDED] (step 6) **Icon:** the store's first letter on the card color by default; optionally an
-  icon from a built-in list of Ionic icons (stored as its key). A custom image as icon follows with
-  photos in step 7.
+  icon from a built-in list of Ionic icons (stored as its key). [DECIDED] (step 7) Or a custom
+  image, stored as the card's photo with role `icon`; choosing a built-in icon or the letter removes
+  it.
+- [DECIDED] (step 7) **Photos:** front and back in the editor; the model also allows any number of
+  `other` photos for later (ADR-0003).
 - [DECIDED] (step 6) **Tags** are created in the card editor and filter the card list; tag names are
   unique ignoring case, and tags no card uses are deleted. **Websites** are an ordered list of
   optional label plus URL.

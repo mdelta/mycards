@@ -56,6 +56,10 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 2,
+    sql: `ALTER TABLE photo ADD COLUMN position INTEGER NOT NULL DEFAULT 0;`,
+  },
 ];
 
 /** Applies all migrations newer than the stored schema version, each in its own transaction. */

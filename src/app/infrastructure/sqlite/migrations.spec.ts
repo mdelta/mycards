@@ -12,7 +12,9 @@ describe('migrate', () => {
       "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
     );
     expect(tables.map((t) => t.name)).toEqual(['card', 'card_tag', 'photo', 'schema_migration', 'tag', 'website']);
-    expect(await db.query('SELECT version FROM schema_migration')).toEqual([{ version: MIGRATIONS.length }]);
+    expect(await db.query('SELECT version FROM schema_migration')).toEqual(
+      MIGRATIONS.map((m) => ({ version: m.version })),
+    );
   });
 
   it('is idempotent and only applies newer migrations', async () => {
@@ -23,16 +25,21 @@ describe('migrate', () => {
     await migrate(db, [...MIGRATIONS, next]);
 
     const versions = await db.query<{ version: number }>('SELECT version FROM schema_migration ORDER BY version');
-    expect(versions.map((v) => v.version)).toEqual([1, 2]);
+    expect(versions.map((v) => v.version)).toEqual([...MIGRATIONS.map((m) => m.version), next.version]);
   });
 
   it('rolls back a failing migration completely', async () => {
     const db = await createTestDatabase();
-    const broken = { version: 2, sql: 'CREATE TABLE extra (a TEXT); INSERT INTO missing VALUES (1);' };
+    const broken = {
+      version: MIGRATIONS.length + 1,
+      sql: 'CREATE TABLE extra (a TEXT); INSERT INTO missing VALUES (1);',
+    };
 
     await expect(migrate(db, [...MIGRATIONS, broken])).rejects.toThrow();
 
     expect(await db.query("SELECT name FROM sqlite_master WHERE name = 'extra'")).toEqual([]);
-    expect(await db.query('SELECT version FROM schema_migration')).toEqual([{ version: 1 }]);
+    expect(await db.query('SELECT version FROM schema_migration')).toEqual(
+      MIGRATIONS.map((m) => ({ version: m.version })),
+    );
   });
 });

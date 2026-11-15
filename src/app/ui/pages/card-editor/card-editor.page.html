@@ -102,6 +102,7 @@
             [storeName]="appearance().storeName"
             [color]="appearance().color"
             [icon]="appearance().icon"
+            [image]="photoIdOf('icon') | photoUrl | async"
           />
           <ion-label>{{ t('fields.color') }}</ion-label>
         </ion-item>
@@ -138,11 +139,20 @@
               <ion-button
                 fill="clear"
                 role="radio"
-                [attr.aria-checked]="!appearance().icon"
+                [attr.aria-checked]="!appearance().icon && !photoIdOf('icon')"
                 [attr.aria-label]="t('fields.iconLetter')"
                 (click)="selectIcon('')"
                 ><span class="letter">{{ initialOf(appearance().storeName) }}</span></ion-button
               >
+              <ion-button
+                fill="clear"
+                role="radio"
+                data-testid="icon-image"
+                [attr.aria-checked]="!!photoIdOf('icon')"
+                [attr.aria-label]="t('fields.iconImage')"
+                (click)="editPhoto('icon')"
+                ><ion-icon slot="icon-only" name="image-outline" aria-hidden="true"
+              /></ion-button>
               @for (key of iconKeys; track key) {
               <ion-button
                 fill="clear"
@@ -157,6 +167,20 @@
             </div>
           </ion-accordion>
         </ion-accordion-group>
+
+        <ion-list-header>
+          <ion-label>{{ t('sections.photos') }}</ion-label>
+        </ion-list-header>
+        @for (role of photoRoles; track role) {
+        <ion-item button [detail]="false" (click)="editPhoto(role)" [attr.data-testid]="'photo-' + role">
+          @if (photoIdOf(role); as photoId) {
+          <ion-thumbnail slot="start"><img [src]="photoId | photoUrl | async" alt="" /></ion-thumbnail>
+          } @else {
+          <ion-icon slot="start" name="camera-outline" aria-hidden="true" />
+          }
+          <ion-label>{{ t('photos.' + role) }}</ion-label>
+        </ion-item>
+        }
 
         <ion-list-header>
           <ion-label>{{ t('sections.tags') }}</ion-label>

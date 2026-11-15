@@ -9,10 +9,10 @@ Implementation: `src/app/domain/services/backup-document.ts` and
 - A ZIP file, named `mycards-YYYY-MM-DD.zip` (UTC date of the export).
 - Entries:
 
-  | Entry          | Content                                                        |
-  | -------------- | -------------------------------------------------------------- |
-  | `mycards.json` | The document described below, UTF-8.                           |
-  | `photos/…`     | Reserved for card photos (step 7). Version 2 writes no photos. |
+  | Entry              | Content                                                         |
+  | ------------------ | --------------------------------------------------------------- |
+  | `mycards.json`     | The document described below, UTF-8.                            |
+  | `photos/<id>.jpg`  | One JPEG per photo listed in a card's `photos` (since step 7).  |
 
   Import ignores all other entries.
 
@@ -86,14 +86,24 @@ The fields of the domain model (ADR-0016). Optional fields are omitted when empt
 | `shopSearchTerm`   | string  | no       | Omitted: the store name is searched (ADR-0005).                                            |
 | `tagIds`           | array   | no       | Ids from `tags`, no duplicates. Omitted: no tags.                                          |
 | `websites`         | array   | no       | Ordered list of `{ "label"?: string, "url": string }`; `url` is `http` or `https`.         |
+| `photos`           | array   | no       | Ordered list of `{ "id": string, "role": "front" \| "back" \| "icon" \| "other" }`, see below. |
 | `createdAt`        | string  | yes      | ISO 8601 UTC.                                                                              |
 | `updatedAt`        | string  | yes      | ISO 8601 UTC.                                                                              |
 | `lastUsedAt`       | string  | no       | ISO 8601 UTC.                                                                              |
 
-Photos are added with step 7. Adding optional fields does not change the version.
+Adding optional fields does not change the version.
+
+### Photo
+
+- `id` follows the same rules as a card `id` and is unique in the whole file; the image is the entry
+  `photos/<id>.jpg`, which must exist.
+- `role`: `front` and `back` are the card's photos, `icon` is the custom icon image (a square). Each
+  of these occurs at most once per card; `other` any number of times (the app does not create
+  `other` photos yet).
 
 ### Version history
 
+- **Version 2, extended** (step 7): optional card `photos` with `photos/<id>.jpg` entries.
 - **Version 2** (step 6): top-level `tags`, card `tagIds` and `websites`. Version 1 files still
   import; their cards get no tags and no websites (fields of that name in a version 1 file are
   ignored).
@@ -108,6 +118,8 @@ Photos are added with step 7. Adding optional fields does not change the version
 - Unknown fields are ignored, so files from a newer app with only additional fields still import.
 - `version` greater than the app supports: rejected with "created by a newer version".
 - Encrypted file: the app asks for the password and asks again after a wrong one.
+- A photo whose `photos/<id>.jpg` entry is missing makes the file invalid. Imported photo files
+  replace stored files with the same id; photo files no card refers to after the import are deleted.
 - **Normal import:** each card replaces the stored card with the same `id` completely; all other
   stored cards stay unchanged. A tag from the file whose name matches a stored tag (ignoring case)
   is merged into it; a new tag whose `id` is already used by a differently named stored tag gets a
