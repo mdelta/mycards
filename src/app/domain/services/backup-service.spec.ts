@@ -213,5 +213,33 @@ describe('BackupService', () => {
 
       expect(await photos.list()).toEqual(['new']);
     });
+
+    it('gives an imported photo a new id instead of overwriting a stored file', async () => {
+      const old = new Uint8Array([1]);
+      photos = new InMemoryPhotoStore({ p1: old });
+      useCards(aCard({ id: 'a', photos: [{ id: 'p1', role: 'front' }] }));
+      const imported = aCard({ id: 'b', photos: [{ id: 'p1', role: 'back' }] });
+
+      await service.restoreBackup({ cards: [imported], tags: [], photos: new Map([['p1', jpeg]]) }, { clean: false });
+
+      expect((await repository.findById('b'))?.photos).toEqual([{ id: 'new-id', role: 'back' }]);
+      expect(await photos.read('p1')).toEqual(old);
+      expect(await photos.read('new-id')).toEqual(jpeg);
+    });
+
+    it('leaves stored photos untouched when the import fails', async () => {
+      const old = new Uint8Array([1]);
+      photos = new InMemoryPhotoStore({ p1: old });
+      useCards(aCard({ id: 'a', photos: [{ id: 'p1', role: 'front' }] }));
+      vi.spyOn(repository, 'saveAll').mockRejectedValueOnce(new Error('disk full'));
+      const imported = aCard({ id: 'a', photos: [{ id: 'p1', role: 'front' }] });
+
+      await expect(
+        service.restoreBackup({ cards: [imported], tags: [], photos: new Map([['p1', jpeg]]) }, { clean: true }),
+      ).rejects.toThrow('disk full');
+
+      expect(await photos.read('p1')).toEqual(old);
+      expect((await repository.findById('a'))?.photos).toEqual([{ id: 'p1', role: 'front' }]);
+    });
   });
 });

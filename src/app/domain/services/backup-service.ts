@@ -68,14 +68,31 @@ export class BackupService {
 
   /** Overwrites cards with the same id; a clean import also deletes all other cards, tags and photos. */
   async restoreBackup(content: BackupContent, options: { clean: boolean }): Promise<void> {
-    for (const [id, data] of content.photos ?? []) {
-      await this.photos.write(id, data);
-    }
+    const imported = await this.writeImportedPhotos(content);
     const { cards, tags } = options.clean
-      ? content
-      : mergeImportedTags(content, await this.repository.findAllTags(), () => this.ids.newId());
+      ? imported
+      : mergeImportedTags(imported, await this.repository.findAllTags(), () => this.ids.newId());
     await this.repository.saveAll(cards, { deleteOthers: options.clean, tags });
     await pruneUnusedPhotos(this.repository, this.photos);
+  }
+
+  /**
+   * Photo files are never overwritten (ADR-0003): an imported photo whose id is already stored gets a
+   * new id. So a failed import leaves stored photos untouched, and cached images stay valid.
+   */
+  private async writeImportedPhotos(content: BackupContent): Promise<BackupContent> {
+    const stored = new Set(await this.photos.list());
+    const cards = [];
+    for (const card of content.cards) {
+      const photos = [];
+      for (const photo of card.photos) {
+        const id = stored.has(photo.id) ? this.ids.newId() : photo.id;
+        await this.photos.write(id, content.photos?.get(photo.id) ?? new Uint8Array());
+        photos.push({ ...photo, id });
+      }
+      cards.push({ ...card, photos });
+    }
+    return { ...content, cards };
   }
 }
 

@@ -9,10 +9,10 @@ Implementation: `src/app/domain/services/backup-document.ts` and
 - A ZIP file, named `mycards-YYYY-MM-DD.zip` (UTC date of the export).
 - Entries:
 
-  | Entry              | Content                                                         |
-  | ------------------ | --------------------------------------------------------------- |
-  | `mycards.json`     | The document described below, UTF-8.                            |
-  | `photos/<id>.jpg`  | One JPEG per photo listed in a card's `photos` (since step 7).  |
+  | Entry             | Content                                                        |
+  | ----------------- | -------------------------------------------------------------- |
+  | `mycards.json`    | The document described below, UTF-8.                           |
+  | `photos/<id>.jpg` | One JPEG per photo listed in a card's `photos` (since step 7). |
 
   Import ignores all other entries.
 
@@ -65,31 +65,31 @@ Implementation: `src/app/domain/services/backup-document.ts` and
 
 The fields of the domain model (ADR-0016). Optional fields are omitted when empty.
 
-| Field              | Type    | Required | Notes                                                                                      |
-| ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------ |
-| `id`               | string  | yes      | 1–64 of `A–Z a–z 0–9 _ -`, not `new`; unique within the file; the matching key for import. |
-| `storeName`        | string  | yes      | Not blank.                                                                                 |
-| `cardId`           | string  | yes      | Not blank.                                                                                 |
-| `barcodeValue`     | string  | no       | Only if it differs from `cardId`.                                                          |
-| `barcodeType`      | string  | no       | One of the 13 types of ADR-0017, e.g. `QR_CODE`, `EAN_13`.                                 |
-| `note`             | string  | no       |                                                                                            |
-| `validFrom`        | string  | no       | Date `YYYY-MM-DD`.                                                                         |
-| `expiry`           | string  | no       | Date `YYYY-MM-DD`, not before `validFrom`.                                                 |
-| `balance`          | number  | no       | Not negative.                                                                              |
-| `balanceType`      | string  | no       | E.g. `EUR`, `points`.                                                                      |
-| `color`            | string  | no       | `#RRGGBB`. Omitted: derived from the store name (ADR-0016).                                |
-| `icon`             | string  | no       | Key from the app's icon list, e.g. `cafe`. Omitted or unknown: first letter.               |
-| `favorite`         | boolean | yes      |                                                                                            |
-| `archived`         | boolean | yes      |                                                                                            |
-| `showOnLockScreen` | boolean | yes      |                                                                                            |
-| `homepageUrl`      | string  | no       | `http` or `https` URL.                                                                     |
-| `shopSearchTerm`   | string  | no       | Omitted: the store name is searched (ADR-0005).                                            |
-| `tagIds`           | array   | no       | Ids from `tags`, no duplicates. Omitted: no tags.                                          |
-| `websites`         | array   | no       | Ordered list of `{ "label"?: string, "url": string }`; `url` is `http` or `https`.         |
+| Field              | Type    | Required | Notes                                                                                          |
+| ------------------ | ------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `id`               | string  | yes      | 1–64 of `A–Z a–z 0–9 _ -`, not `new`; unique within the file; the matching key for import.     |
+| `storeName`        | string  | yes      | Not blank.                                                                                     |
+| `cardId`           | string  | yes      | Not blank.                                                                                     |
+| `barcodeValue`     | string  | no       | Only if it differs from `cardId`.                                                              |
+| `barcodeType`      | string  | no       | One of the 13 types of ADR-0017, e.g. `QR_CODE`, `EAN_13`.                                     |
+| `note`             | string  | no       |                                                                                                |
+| `validFrom`        | string  | no       | Date `YYYY-MM-DD`.                                                                             |
+| `expiry`           | string  | no       | Date `YYYY-MM-DD`, not before `validFrom`.                                                     |
+| `balance`          | number  | no       | Not negative.                                                                                  |
+| `balanceType`      | string  | no       | E.g. `EUR`, `points`.                                                                          |
+| `color`            | string  | no       | `#RRGGBB`. Omitted: derived from the store name (ADR-0016).                                    |
+| `icon`             | string  | no       | Key from the app's icon list, e.g. `cafe`. Omitted or unknown: first letter.                   |
+| `favorite`         | boolean | yes      |                                                                                                |
+| `archived`         | boolean | yes      |                                                                                                |
+| `showOnLockScreen` | boolean | yes      |                                                                                                |
+| `homepageUrl`      | string  | no       | `http` or `https` URL.                                                                         |
+| `shopSearchTerm`   | string  | no       | Omitted: the store name is searched (ADR-0005).                                                |
+| `tagIds`           | array   | no       | Ids from `tags`, no duplicates. Omitted: no tags.                                              |
+| `websites`         | array   | no       | Ordered list of `{ "label"?: string, "url": string }`; `url` is `http` or `https`.             |
 | `photos`           | array   | no       | Ordered list of `{ "id": string, "role": "front" \| "back" \| "icon" \| "other" }`, see below. |
-| `createdAt`        | string  | yes      | ISO 8601 UTC.                                                                              |
-| `updatedAt`        | string  | yes      | ISO 8601 UTC.                                                                              |
-| `lastUsedAt`       | string  | no       | ISO 8601 UTC.                                                                              |
+| `createdAt`        | string  | yes      | ISO 8601 UTC.                                                                                  |
+| `updatedAt`        | string  | yes      | ISO 8601 UTC.                                                                                  |
+| `lastUsedAt`       | string  | no       | ISO 8601 UTC.                                                                                  |
 
 Adding optional fields does not change the version.
 
@@ -118,8 +118,8 @@ Adding optional fields does not change the version.
 - Unknown fields are ignored, so files from a newer app with only additional fields still import.
 - `version` greater than the app supports: rejected with "created by a newer version".
 - Encrypted file: the app asks for the password and asks again after a wrong one.
-- A photo whose `photos/<id>.jpg` entry is missing makes the file invalid. Imported photo files
-  replace stored files with the same id; photo files no card refers to after the import are deleted.
+- A photo whose `photos/<id>.jpg` entry is missing makes the file invalid. An imported photo whose id
+  is already stored gets a new id (photo files are never overwritten); photo files no card refers to after the import are deleted.
 - **Normal import:** each card replaces the stored card with the same `id` completely; all other
   stored cards stay unchanged. A tag from the file whose name matches a stored tag (ignoring case)
   is merged into it; a new tag whose `id` is already used by a differently named stored tag gets a
