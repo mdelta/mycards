@@ -31,7 +31,7 @@ describe('BackupService', () => {
   beforeEach(() => {
     repository = new InMemoryCardRepository([aCard({ id: 'a' }), aCard({ id: 'b', storeName: 'Bravo' })]);
     archive = new FakeArchiveCodec();
-    service = new BackupService(repository, archive, { now: () => now });
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
   });
 
   function documentEntry(json: string): BinaryFile {
@@ -69,10 +69,10 @@ describe('BackupService', () => {
   it('reads the cards of a backup without changing stored cards', async () => {
     archive.entries = [
       { name: 'other.txt', data: new Uint8Array() },
-      documentEntry(serializeBackupDocument([aCard({ id: 'x' })], now)),
+      documentEntry(serializeBackupDocument({ cards: [aCard({ id: 'x' })], tags: [] }, now)),
     ];
 
-    expect(await service.readBackup(new Uint8Array())).toEqual([aCard({ id: 'x' })]);
+    expect(await service.readBackup(new Uint8Array())).toEqual({ cards: [aCard({ id: 'x' })], tags: [] });
     expect((await repository.findAll()).map((card) => card.id)).toEqual(['a', 'b']);
   });
 
@@ -89,7 +89,10 @@ describe('BackupService', () => {
   });
 
   it('normal import overwrites cards with the same id and keeps the others', async () => {
-    await service.restoreBackup([aCard({ id: 'b', storeName: 'New' }), aCard({ id: 'c' })], { clean: false });
+    await service.restoreBackup(
+      { cards: [aCard({ id: 'b', storeName: 'New' }), aCard({ id: 'c' })], tags: [] },
+      { clean: false },
+    );
 
     expect((await repository.findAll()).map((card) => [card.id, card.storeName])).toEqual([
       ['a', 'Store'],
@@ -99,8 +102,50 @@ describe('BackupService', () => {
   });
 
   it('clean import deletes all other cards', async () => {
-    await service.restoreBackup([aCard({ id: 'c' })], { clean: true });
+    await service.restoreBackup({ cards: [aCard({ id: 'c' })], tags: [] }, { clean: true });
 
     expect((await repository.findAll()).map((card) => card.id)).toEqual(['c']);
+  });
+
+  it('exports tags with the cards', async () => {
+    repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+
+    await service.createBackup();
+
+    const json = JSON.parse(new TextDecoder().decode(archive.packed!.entries[0].data));
+    expect(json.tags).toEqual([{ id: 't1', name: 'Food' }]);
+    expect(json.cards[0].tagIds).toEqual(['t1']);
+  });
+
+  it('normal import reuses existing tags with the same name', async () => {
+    repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+
+    await service.restoreBackup(
+      {
+        cards: [aCard({ id: 'b', tagIds: ['x', 't1'] })],
+        tags: [
+          { id: 'x', name: 'FOOD' },
+          { id: 't1', name: 'Drugstore' },
+        ],
+      },
+      { clean: false },
+    );
+
+    expect(await repository.findAllTags()).toEqual([
+      { id: 't1', name: 'Food' },
+      { id: 'new-id', name: 'Drugstore' },
+    ]);
+    expect((await repository.findById('b'))?.tagIds).toEqual(['t1', 'new-id']);
+  });
+
+  it('clean import replaces all tags', async () => {
+    repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' });
+
+    await service.restoreBackup({ cards: [aCard({ id: 'b', tagIds: ['t2'] })], tags: [{ id: 't2', name: 'Food' }] }, { clean: true });
+
+    expect(await repository.findAllTags()).toEqual([{ id: 't2', name: 'Food' }]);
   });
 });

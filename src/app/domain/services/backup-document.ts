@@ -1,15 +1,21 @@
 import { BackupError } from '../model/backup-error';
 import { isBarcodeType } from '../model/barcode-type';
-import type { Card } from '../model/card';
+import type { Card, Tag, WebsiteLink } from '../model/card';
 
 import { validateCardDraft } from './card-draft';
 
 /** Own export format (ADR-0004), specified in docs/formats/mycards-backup.md. */
 export const BACKUP_FORMAT = 'mycards-backup';
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 export const BACKUP_DOCUMENT_NAME = 'mycards.json';
 
-type ExportedCard = Omit<Card, 'tagIds'>;
+/** Version 1 had no tags and websites; version 2 added them. */
+const TAGS_VERSION = 2;
+
+export interface BackupContent {
+  cards: Card[];
+  tags: Tag[];
+}
 
 /** Ids appear in routes (`/cards/:id`); `new` is the creation route. */
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
@@ -30,37 +36,69 @@ const OPTIONAL_TEXT = [
 ] as const;
 const FLAGS = ['favorite', 'archived', 'showOnLockScreen'] as const;
 
-/** Version 1 has no tags yet (step 6); `tagIds` is therefore not exported. */
-export function serializeBackupDocument(cards: readonly Card[], exportedAt: string): string {
-  const exported: ExportedCard[] = cards.map(({ tagIds: _, ...card }) => card);
-  return JSON.stringify({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt, cards: exported }, null, 2);
+export function serializeBackupDocument(content: BackupContent, exportedAt: string): string {
+  const { cards, tags } = content;
+  return JSON.stringify({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt, tags, cards }, null, 2);
 }
 
-/** Parses and validates a whole document; any invalid card rejects the file (nothing is imported). */
-export function parseBackupDocument(json: string): Card[] {
+/** Parses and validates a whole document; any invalid card or tag rejects the file (nothing is imported). */
+export function parseBackupDocument(json: string): BackupContent {
   const document = parseJson(json);
   if (!isRecord(document) || document['format'] !== BACKUP_FORMAT || !Number.isInteger(document['version'])) {
     throw new BackupError('invalidContent');
   }
-  if ((document['version'] as number) > BACKUP_VERSION) {
+  const version = document['version'] as number;
+  if (version > BACKUP_VERSION) {
     throw new BackupError('newerVersion');
   }
-  const rawCards = document['cards'];
-  if (!Array.isArray(rawCards)) {
+  const tags = version >= TAGS_VERSION ? arrayOf(document['tags']).map(parseTag) : [];
+  const tagIds = new Set(tags.map((tag) => tag.id));
+  if (
+    tagIds.size !== tags.length ||
+    new Set(tags.map((tag) => tag.name.toLocaleLowerCase())).size !== tags.length
+  ) {
     throw new BackupError('invalidContent');
   }
-  const cards = rawCards.map(parseCard);
+  const cards = arrayOf(document['cards']).map((raw) => parseCard(raw, version, tagIds));
   if (new Set(cards.map((card) => card.id)).size !== cards.length) {
     throw new BackupError('invalidContent');
   }
-  return cards;
+  return { cards, tags };
 }
 
-function parseCard(raw: unknown): Card {
+function parseTag(raw: unknown): Tag {
   if (!isRecord(raw)) {
     throw new BackupError('invalidContent');
   }
-  const card: Record<string, unknown> = { tagIds: [] };
+  const id = ofType(raw['id'], 'string') as string;
+  const name = (ofType(raw['name'], 'string') as string).trim();
+  if (!isValidId(id) || !name) {
+    throw new BackupError('invalidContent');
+  }
+  return { id, name };
+}
+
+function parseWebsite(raw: unknown): WebsiteLink {
+  if (!isRecord(raw)) {
+    throw new BackupError('invalidContent');
+  }
+  const url = ofType(raw['url'], 'string') as string;
+  return raw['label'] === undefined ? { url } : { label: ofType(raw['label'], 'string') as string, url };
+}
+
+function parseCard(raw: unknown, version: number, tagIds: ReadonlySet<string>): Card {
+  if (!isRecord(raw)) {
+    throw new BackupError('invalidContent');
+  }
+  const card: Record<string, unknown> = { tagIds: [], websites: [] };
+  if (version >= TAGS_VERSION) {
+    const ids = arrayOf(raw['tagIds'] ?? []).map((id) => ofType(id, 'string') as string);
+    if (new Set(ids).size !== ids.length || ids.some((id) => !tagIds.has(id))) {
+      throw new BackupError('invalidContent');
+    }
+    card['tagIds'] = ids;
+    card['websites'] = arrayOf(raw['websites'] ?? []).map(parseWebsite);
+  }
   for (const field of REQUIRED_TEXT) {
     card[field] = ofType(raw[field], 'string');
   }
@@ -91,6 +129,13 @@ function parseCard(raw: unknown): Card {
 
 function isValidId(id: string): boolean {
   return ID_PATTERN.test(id) && !RESERVED_IDS.includes(id);
+}
+
+function arrayOf(value: unknown): unknown[] {
+  if (!Array.isArray(value)) {
+    throw new BackupError('invalidContent');
+  }
+  return value;
 }
 
 function ofType(value: unknown, type: 'string' | 'boolean' | 'number'): unknown {

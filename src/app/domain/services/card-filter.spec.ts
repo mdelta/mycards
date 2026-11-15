@@ -27,4 +27,10 @@ describe('filterCards', () => {
   it('returns nothing if no card matches', () => {
     expect(filterCards(cards, 'xyz')).toEqual([]);
   });
+
+  it('keeps only cards with the selected tag', () => {
+    const tagged = [aCard({ id: 'a', tagIds: ['food'] }), aCard({ id: 'b', storeName: 'Food', tagIds: [] })];
+    expect(filterCards(tagged, '', 'food').map((c) => c.id)).toEqual(['a']);
+    expect(filterCards(tagged, 'food', 'food')).toEqual([]);
+  });
 });

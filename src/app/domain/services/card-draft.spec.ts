@@ -51,4 +51,48 @@ describe('normalizeCardDraft', () => {
   it('keeps only the keys present in the draft', () => {
     expect(Object.keys(normalizeCardDraft({ favorite: true }))).toEqual(['favorite']);
   });
+
+  describe('card details (step 6)', () => {
+    const valid = { storeName: 'Bakery', cardId: '1' };
+
+    it('trims the detail fields and drops blank ones', () => {
+      expect(
+        normalizeCardDraft({ color: ' ', icon: ' cart ', homepageUrl: ' https://a.de ', shopSearchTerm: '' }),
+      ).toEqual({ color: undefined, icon: 'cart', homepageUrl: 'https://a.de', shopSearchTerm: undefined });
+    });
+
+    it('removes duplicate tag ids', () => {
+      expect(normalizeCardDraft({ tagIds: ['a', 'b', 'a'] }).tagIds).toEqual(['a', 'b']);
+    });
+
+    it('trims websites, drops empty rows and blank labels', () => {
+      expect(
+        normalizeCardDraft({
+          websites: [{ label: ' Shop ', url: ' https://a.de ' }, { label: ' ', url: '' }, { label: '  ', url: 'https://b.de' }],
+        }).websites,
+      ).toEqual([{ label: 'Shop', url: 'https://a.de' }, { url: 'https://b.de' }]);
+    });
+
+    it('accepts valid details', () => {
+      expect(
+        validateCardDraft({
+          ...valid,
+          color: '#1565C0',
+          homepageUrl: 'https://a.de',
+          websites: [{ url: 'http://b.de' }],
+        }),
+      ).toEqual([]);
+    });
+
+    it('rejects an invalid color, homepage and website', () => {
+      expect(
+        validateCardDraft({
+          ...valid,
+          color: 'blue',
+          homepageUrl: 'a.de',
+          websites: [{ url: 'https://ok.de' }, { label: 'Only a label', url: '' }],
+        }),
+      ).toEqual(['colorInvalid', 'homepageUrlInvalid', 'websiteUrlInvalid']);
+    });
+  });
 });

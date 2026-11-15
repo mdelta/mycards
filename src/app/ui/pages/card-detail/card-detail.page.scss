@@ -23,3 +23,9 @@
 .hint {
   color: #555555;
 }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 8px;
+}

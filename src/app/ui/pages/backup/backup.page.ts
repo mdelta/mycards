@@ -22,6 +22,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { BackupError } from '../../../domain/model/backup-error';
 import type { Card } from '../../../domain/model/card';
+import type { BackupContent } from '../../../domain/services/backup-document';
 import { BackupService } from '../../../domain/services/backup-service';
 import { CardService } from '../../../domain/services/card-service';
 import { BACKUP_FILES } from '../../../infrastructure/providers';
@@ -97,10 +98,10 @@ export class BackupPage {
     await this.run(async () => {
       try {
         const file = await this.files.pick();
-        const cards = file && (await this.readWithPassword(file.data));
-        if (cards && (await this.confirmImport(cards))) {
-          await this.backup.restoreBackup(cards, { clean: this.clean() });
-          await this.toast('import.done', { count: cards.length });
+        const content = file && (await this.readWithPassword(file.data));
+        if (content && (await this.confirmImport(content.cards))) {
+          await this.backup.restoreBackup(content, { clean: this.clean() });
+          await this.toast('import.done', { count: content.cards.length });
         }
       } catch (error) {
         await this.toast(error instanceof BackupError ? `errors.${error.reason}` : 'errors.importFailed');
@@ -109,7 +110,7 @@ export class BackupPage {
   }
 
   /** Asks for the password until it is right; `undefined` if the user cancels. */
-  private async readWithPassword(data: Uint8Array): Promise<Card[] | undefined> {
+  private async readWithPassword(data: Uint8Array): Promise<BackupContent | undefined> {
     let password: string | undefined;
     for (;;) {
       try {

@@ -17,6 +17,22 @@
     <ion-toolbar>
       <ion-searchbar [placeholder]="t('cardList.search')" [value]="query()" (ionInput)="onSearch($event)" />
     </ion-toolbar>
+    } @if (cards().length && tags().length) {
+    <ion-toolbar>
+      <div class="tag-filter" role="group" [attr.aria-label]="t('cardList.tagFilter')">
+        @for (tag of tags(); track tag.id) {
+        <ion-chip
+          role="button"
+          data-testid="tag-filter"
+          [outline]="selectedTag() !== tag.id"
+          [color]="selectedTag() === tag.id ? 'primary' : undefined"
+          [attr.aria-pressed]="selectedTag() === tag.id"
+          (click)="toggleTag(tag.id)"
+          >{{ tag.name }}</ion-chip
+        >
+        }
+      </div>
+    </ion-toolbar>
     }
   </ion-header>
 
@@ -30,6 +46,7 @@
     <ion-list>
       @for (card of visibleCards(); track card.id) {
       <ion-item [routerLink]="['/cards', card.id]" [detail]="true" data-testid="card-item">
+        <app-card-avatar slot="start" [storeName]="card.storeName" [color]="card.color" [icon]="card.icon" />
         <ion-label>
           <h2>{{ card.storeName }}</h2>
           <p>{{ card.cardId }}</p>

@@ -20,7 +20,7 @@ describe('SqliteCardRepository', () => {
     expiry: '2027-01-01',
     balance: 1.23,
     balanceType: 'EUR',
-    color: '#FFF44336',
+    color: '#F44336',
     icon: 'cart',
     favorite: true,
     archived: true,
@@ -28,6 +28,7 @@ describe('SqliteCardRepository', () => {
     homepageUrl: 'https://example.com',
     shopSearchTerm: 'Store Berlin',
     tagIds: ['t2', 't1'],
+    websites: [{ label: 'Shop', url: 'https://shop.example.com' }, { url: 'https://example.org' }],
     lastUsedAt: '2026-02-01T00:00:00.000Z',
   });
 
@@ -105,11 +106,13 @@ describe('SqliteCardRepository', () => {
     });
 
     it('replaces cards with the same id and keeps the others', async () => {
-      await repository.saveAll([aCard({ id: 'replaced', storeName: 'New', tagIds: ['t2'] }), aCard({ id: 'added' })]);
+      await repository.saveAll([aCard({ id: 'replaced', storeName: 'New', tagIds: ['t2'] }), aCard({ id: 'added' })], {
+        tags: [{ id: 't2', name: 'Drugstore' }],
+      });
 
       expect(await repository.findAll()).toEqual(
         expect.arrayContaining([
-          aCard({ id: 'kept', tagIds: ['t1'] }),
+          aCard({ id: 'kept', tagIds: ['t1'], websites: [{ url: 'https://example.com/a' }] }),
           aCard({ id: 'replaced', storeName: 'New', tagIds: ['t2'] }),
           aCard({ id: 'added' }),
         ]),
@@ -133,6 +136,50 @@ describe('SqliteCardRepository', () => {
       ).rejects.toThrow();
 
       expect((await repository.findAll()).map((c) => c.id).sort()).toEqual(['kept', 'replaced']);
+    });
+  });
+
+  describe('tags and websites', () => {
+    it('keeps the order of websites and replaces them on save', async () => {
+      await repository.save(fullCard);
+      await repository.save({ ...fullCard, websites: [{ url: 'https://new.example.com' }] });
+
+      expect((await repository.findById('full'))?.websites).toEqual([{ url: 'https://new.example.com' }]);
+      expect((await repository.findAll())[0].websites).toEqual([{ url: 'https://new.example.com' }]);
+    });
+
+    it('creates and renames tags', async () => {
+      await repository.saveTag({ id: 't3', name: 'Cinema' });
+      await repository.saveTag({ id: 't3', name: 'Movies' });
+
+      expect(await repository.findAllTags()).toContainEqual({ id: 't3', name: 'Movies' });
+    });
+
+    it('deletes tags that no card uses after a write', async () => {
+      await repository.save(aCard({ id: 'a', tagIds: ['t1'] }));
+
+      expect(await repository.findAllTags()).toEqual([{ id: 't1', name: 'Food' }]);
+
+      await repository.delete('a');
+
+      expect(await repository.findAllTags()).toEqual([]);
+    });
+
+    it('saves imported tags with the cards', async () => {
+      await repository.saveAll([aCard({ id: 'a', tagIds: ['t9'] })], { tags: [{ id: 't9', name: 'Imported' }] });
+
+      expect((await repository.findById('a'))?.tagIds).toEqual(['t9']);
+      expect(await repository.findAllTags()).toEqual([{ id: 't9', name: 'Imported' }]);
+    });
+
+    it('replaces all tags on a clean import', async () => {
+      await repository.save(aCard({ id: 'a', tagIds: ['t1'] }));
+      await repository.saveAll([aCard({ id: 'b', tagIds: ['t9'] })], {
+        deleteOthers: true,
+        tags: [{ id: 't9', name: 'Food' }],
+      });
+
+      expect(await repository.findAllTags()).toEqual([{ id: 't9', name: 'Food' }]);
     });
   });
 });
