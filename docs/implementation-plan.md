@@ -110,6 +110,20 @@ presentation, privacy, data safety, maintainability, offline).
   pre-rendered barcode images of cards marked `showOnLockScreen`, favorites first, swipe between them.
 - TypeScript side: render images on change, sync to the plugin; images excluded from Auto Backup.
 
+### Before step 10 – New features to clarify
+
+Requested by the product owner. Each item still has to be clarified; afterwards this plan, the
+ADRs and arc42 get updated, and the items get their own steps, before step 10 starts.
+
+| #   | Feature                    | Request                                                                                                                                                                                        | Open points **[DECIDE]**                                                                                                                                       |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R-1 | Opt-in usage data (Sentry) | Share logs, errors and usage data (e.g. used barcode types, number of cards) with Sentry to improve the app. Turning it on must tell the user what is sent; ideally the user can see the data. | Exact data list; hosting (sentry.io or self-hosted) and region; how the user sees the data; effect on privacy goal #2, ADR-0015 and the Play data safety form. |
+| R-2 | "Buy me a coffee"          | Let users support the development.                                                                                                                                                             | Provider (e.g. external link or Google Play Billing); check which option Google Play's payments policy allows.                                                 |
+| R-3 | Opt-in crash reports       | Users can opt in to sending crash reports.                                                                                                                                                     | Same tool as R-1 or separate; separate switch from R-1; native (Android) crashes as well as TypeScript errors.                                                 |
+| R-4 | Settings page              | App settings such as color theme (light, dark, system), privacy notes, link to the source code, the usage-data switches (R-1, R-3) and more.                                                   | Full list of settings; where the privacy notes live (in the app, website or both).                                                                             |
+| R-5 | App logo                   | Design a logo for the app.                                                                                                                                                                     | Style and colors; who designs it; adaptive icon and Play store sizes.                                                                                          |
+| R-6 | Play store text            | Draft the store listing text.                                                                                                                                                                  | Tone; short and full description; English only at first (ADR-0012).                                                                                            |
+
 ### Step 10 – Release (N-01; ADR-0008)
 
 - Answer Q-14 (tooling, tracks, trigger), signing with the upload key from GitHub Secrets,
@@ -119,8 +133,8 @@ presentation, privacy, data safety, maintainability, offline).
 
 ### Step 11 – Polish
 
-- Settings page, dark mode, accessibility review, not-found route, error handling and user
-  feedback (toasts), sorting options.
+- Accessibility review, not-found route, error handling and user feedback (toasts), sorting
+  options. The settings page and dark mode moved to R-4.
 
 ## 3. Out of scope for now
 
