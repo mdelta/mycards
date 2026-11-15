@@ -1,8 +1,10 @@
 import { BackupError } from '../model/backup-error';
 import { isBarcodeType } from '../model/barcode-type';
 import type { Card, Tag, WebsiteLink } from '../model/card';
+import { isCardColor } from '../model/card-appearance';
 
 import { validateCardDraft } from './card-draft';
+import { isWebUrl } from './links';
 
 /** Own export format (ADR-0004), specified in docs/formats/mycards-backup.md. */
 export const BACKUP_FORMAT = 'mycards-backup';
@@ -83,6 +85,16 @@ function parseWebsite(raw: unknown): WebsiteLink {
   return raw['label'] === undefined ? { url } : { label: ofType(raw['label'], 'string') as string, url };
 }
 
+/** Version 1 did not restrict `color` and `homepageUrl`; values the app cannot use are dropped. */
+function dropLegacyValues(card: Record<string, unknown>): void {
+  if (typeof card['color'] === 'string' && !isCardColor(card['color'])) {
+    delete card['color'];
+  }
+  if (typeof card['homepageUrl'] === 'string' && !isWebUrl(card['homepageUrl'])) {
+    delete card['homepageUrl'];
+  }
+}
+
 function parseCard(raw: unknown, version: number, tagIds: ReadonlySet<string>): Card {
   if (!isRecord(raw)) {
     throw new BackupError('invalidContent');
@@ -116,6 +128,9 @@ function parseCard(raw: unknown, version: number, tagIds: ReadonlySet<string>): 
       throw new BackupError('invalidContent');
     }
     card['barcodeType'] = type;
+  }
+  if (version < TAGS_VERSION) {
+    dropLegacyValues(card);
   }
   const result = card as unknown as Card;
   if (!isValidId(result.id) || validateCardDraft(result).length) {

@@ -78,6 +78,14 @@ describe('backup document', () => {
     expect(parseBackupDocument(json)).toEqual({ cards: [aCard()], tags: [] });
   });
 
+  it('drops version 1 colors and homepages that the app cannot use', () => {
+    const legacy = { ...aCard(), color: '#FFF44336', homepageUrl: 'intent://scan#Intent;end' };
+    const kept = { ...aCard({ id: 'kept' }), color: '#C62828', homepageUrl: 'https://a.de' };
+    const json = documentWith({ version: 1, tags: undefined, cards: [legacy, kept] });
+
+    expect(parseBackupDocument(json).cards).toEqual([aCard(), { ...kept, tagIds: [], websites: [] }]);
+  });
+
   it('defaults missing tag ids and websites to empty lists', () => {
     const { tagIds: _, websites: __, ...card } = aCard();
 

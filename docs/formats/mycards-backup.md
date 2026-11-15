@@ -97,7 +97,9 @@ Photos are added with step 7. Adding optional fields does not change the version
 - **Version 2** (step 6): top-level `tags`, card `tagIds` and `websites`. Version 1 files still
   import; their cards get no tags and no websites (fields of that name in a version 1 file are
   ignored).
-- **Version 1** (step 5): cards only.
+- **Version 1** (step 5): cards only. Version 1 did not restrict `color` and `homepageUrl`;
+  on import, a `color` that is not `#RRGGBB` and a `homepageUrl` that is not an `http(s)` URL are
+  dropped.
 
 ## Import rules
 

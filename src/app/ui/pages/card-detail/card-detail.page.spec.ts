@@ -166,6 +166,15 @@ describe('CardDetailPage', () => {
       expect(toast.present).toHaveBeenCalled();
     });
 
+    it('does not launch a stored homepage that is not a web URL', async () => {
+      await show('linked');
+
+      await fixture.componentInstance.openUrl('intent://scan#Intent;end');
+
+      expect(launcher.open).not.toHaveBeenCalled();
+      expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ message: en.cardDetail.openFailed }));
+    });
+
     it('hides the link section for a card without links', async () => {
       const element = await show('plain');
 

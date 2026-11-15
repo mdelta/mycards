@@ -26,7 +26,7 @@ import { createOutline, globeOutline, mapOutline, openOutline } from 'ionicons/i
 import type { Card } from '../../../domain/model/card';
 import { barcodeValueOf } from '../../../domain/services/barcode-value';
 import { CardService } from '../../../domain/services/card-service';
-import { openShopSearch } from '../../../domain/services/links';
+import { isWebUrl, openShopSearch } from '../../../domain/services/links';
 import { BARCODE_RENDERER, EXTERNAL_LAUNCHER, PRESENTATION_MODE } from '../../../infrastructure/providers';
 
 type BarcodeView = { kind: 'loading' } | { kind: 'none' } | { kind: 'error' } | { kind: 'image'; url: SafeUrl };
@@ -92,7 +92,7 @@ export class CardDetailPage implements ViewWillEnter, ViewWillLeave {
   }
 
   async openUrl(url: string): Promise<void> {
-    await this.reportFailure(await this.launcher.open(url));
+    await this.reportFailure(isWebUrl(url) && (await this.launcher.open(url)));
   }
 
   async findShop(card: Card): Promise<void> {
