@@ -34,7 +34,7 @@ import { map } from 'rxjs';
 import type { BarcodeType } from '../../../domain/model/barcode-type';
 import { BARCODE_TYPES, isBarcodeType } from '../../../domain/model/barcode-type';
 import type { Card, Tag, WebsiteLink } from '../../../domain/model/card';
-import { CARD_COLORS, cardInitialOf } from '../../../domain/model/card-appearance';
+import { CARD_COLORS, cardInitialOf, isCardColor } from '../../../domain/model/card-appearance';
 import type { CardDraft, CardValidationError } from '../../../domain/services/card-draft';
 import { CardService, InvalidCardError } from '../../../domain/services/card-service';
 import { CARD_ICONS, CARD_ICON_KEYS } from '../../card-icons';
@@ -305,7 +305,7 @@ function toFormValue(card: Card): Required<FormValue> {
     balanceType: card.balanceType ?? '',
     favorite: card.favorite,
     showOnLockScreen: card.showOnLockScreen,
-    color: card.color ?? '',
+    color: card.color && isCardColor(card.color) ? card.color : '',
     icon: card.icon ?? '',
     tagIds: card.tagIds,
     homepageUrl: card.homepageUrl ?? '',

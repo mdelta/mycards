@@ -25,7 +25,7 @@ export function isCardColor(value: string): boolean {
 
 /** The card's own color, or a palette color derived from the store name so it stays stable. */
 export function cardColorOf(card: { color?: string; storeName: string }): string {
-  if (card.color) {
+  if (card.color && isCardColor(card.color)) {
     return card.color;
   }
   let hash = 0;

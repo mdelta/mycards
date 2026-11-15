@@ -298,6 +298,16 @@ describe('CardEditorPage', () => {
       expect((await repository.findById('c1'))?.websites).toEqual([{ url: 'https://example.org' }]);
     });
 
+    it('lets a card with a legacy color be saved, falling back to the automatic color', async () => {
+      await repository.save(aCard({ id: 'legacy', color: '#FFF44336' }));
+      await setUp('legacy');
+
+      expect(page.form.controls.color.value).toBe('');
+      await page.save();
+
+      expect((await repository.findById('legacy'))?.color).toBeUndefined();
+    });
+
     it('shows errors for invalid URLs and does not save', async () => {
       await setUp('c1');
       page.form.patchValue({ homepageUrl: 'example.com' });

@@ -44,4 +44,8 @@ describe('card appearance', () => {
     expect(cardInitialOf('🎉 Party')).toBe('🎉');
     expect(cardInitialOf('  ')).toBe('?');
   });
+
+  it('ignores a stored color that is not #RRGGBB', () => {
+    expect(cardColorOf({ storeName: 'Bakery', color: '#FFF44336' })).toBe(cardColorOf({ storeName: 'Bakery' }));
+  });
 });
