@@ -1,17 +1,23 @@
 import { BackupError } from '../model/backup-error';
+import { ICON_IMAGE_SIZE, JPEG_QUALITY, PHOTO_MAX_EDGE } from '../model/photo';
 import type { ArchiveCodec } from '../ports/archive-codec';
 import type { BinaryFile } from '../ports/backup-files';
 import type { CardRepository } from '../ports/card-repository';
 import type { Clock } from '../ports/clock';
 import type { IdGenerator } from '../ports/id-generator';
+import type { ImageProcessor } from '../ports/image-processor';
 import type { PhotoStore } from '../ports/photo-store';
 
 import type { BackupContent } from './backup-document';
 import { BACKUP_DOCUMENT_NAME, parseBackupDocument, photoEntryName, serializeBackupDocument } from './backup-document';
+import type { CatimaLoss } from './catima-format';
+import { CATIMA_DOCUMENT_NAME, catimaLosses, fromCatima, parseCatimaCsv, toCatima } from './catima-format';
 import { pruneUnusedPhotos } from './photo-service';
 import { mergeImportedTags } from './tag-merge';
 
-/** Export and import in the own format (F-05, F-11, ADR-0004). */
+export type BackupFormat = 'mycards' | 'catima';
+
+/** Export and import in the own format and the Catima format (F-05, F-11, ADR-0004). */
 export class BackupService {
   constructor(
     private readonly repository: CardRepository,
@@ -19,10 +25,14 @@ export class BackupService {
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
     private readonly photos: PhotoStore,
+    private readonly images: ImageProcessor,
   ) {}
 
   /** An empty password means no password. */
-  async createBackup(password?: string): Promise<BinaryFile> {
+  async createBackup(password?: string, format: BackupFormat = 'mycards'): Promise<BinaryFile> {
+    if (format === 'catima') {
+      return this.createCatimaExport(password);
+    }
     const now = this.clock.now();
     const files: BinaryFile[] = [];
     const cards = [];
@@ -51,7 +61,7 @@ export class BackupService {
     const entries = await this.archive.unpack(data, password || undefined);
     const document = entries.find((entry) => entry.name === BACKUP_DOCUMENT_NAME);
     if (!document) {
-      throw new BackupError('invalidContent');
+      return this.readCatima(entries);
     }
     const content = parseBackupDocument(decodeUtf8(document.data));
     const files = new Map(entries.map((entry) => [entry.name, entry.data]));
@@ -63,7 +73,65 @@ export class BackupService {
       }
       photos.set(photo.id, data);
     }
-    return { ...content, photos };
+    return { ...content, photos, format: 'mycards' };
+  }
+
+  /** MyCards fields that a Catima export would lose. */
+  async catimaLosses(): Promise<CatimaLoss[]> {
+    return catimaLosses(await this.repository.findAll());
+  }
+
+  private async createCatimaExport(password?: string): Promise<BinaryFile> {
+    const { csv, photos } = toCatima(await this.repository.findAll(), await this.repository.findAllTags());
+    const files: BinaryFile[] = [{ name: CATIMA_DOCUMENT_NAME, data: new TextEncoder().encode(csv) }];
+    for (const photo of photos) {
+      const data = await this.photos.read(photo.id);
+      if (data) {
+        files.push({ name: photo.entry, data: await this.images.toPng(data) });
+      }
+    }
+    const date = this.clock.now().slice(0, 10).replaceAll('-', '');
+    return { name: `catima_${date}.zip`, data: await this.archive.pack(files, password || undefined) };
+  }
+
+  /** Catima photos are full-size PNGs; they are shrunk like photos taken in MyCards (ADR-0003). */
+  private async readCatima(entries: BinaryFile[]): Promise<BackupContent> {
+    const document = entries.find((entry) => entry.name === CATIMA_DOCUMENT_NAME);
+    if (!document) {
+      throw new BackupError('invalidContent');
+    }
+    const files = new Map(entries.map((entry) => [entry.name, entry.data]));
+    const imported = fromCatima(
+      parseCatimaCsv(decodeUtf8(document.data)),
+      new Set(files.keys()),
+      this.clock.now(),
+      () => this.ids.newId(),
+    );
+    const photos = new Map<string, Uint8Array>();
+    for (const [id, { entry, role }] of imported.photoEntries) {
+      const image = files.get(entry)!;
+      try {
+        photos.set(
+          id,
+          role === 'icon'
+            ? await this.images.cropSquare(image, ICON_IMAGE_SIZE, JPEG_QUALITY)
+            : await this.images.resize(image, PHOTO_MAX_EDGE, JPEG_QUALITY),
+        );
+      } catch {
+        // An unreadable image must not block the import of the card itself.
+      }
+    }
+    const cards = imported.content.cards.map((card) => ({
+      ...card,
+      photos: card.photos.filter((photo) => photos.has(photo.id)),
+    }));
+    return {
+      ...imported.content,
+      cards,
+      photos,
+      format: 'catima',
+      unsupportedBarcodes: imported.unsupportedBarcodes,
+    };
   }
 
   /** Overwrites cards with the same id; a clean import also deletes all other cards, tags and photos. */

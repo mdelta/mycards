@@ -154,11 +154,23 @@
       "passwordMismatch": "The passwords do not match.",
       "button": "Export",
       "done": "Export file created.",
-      "failed": "Export failed. Try again."
+      "failed": "Export failed. Try again.",
+      "formatMyCards": "MyCards format (all data)",
+      "formatCatima": "Catima format (for the Catima app)",
+      "lossHeader": "Not included in Catima files",
+      "lossMessage": "Catima has no place for: {{ fields }}. Export anyway?",
+      "losses": {
+        "homepage": "homepage",
+        "websites": "extra websites",
+        "icon": "built-in icons",
+        "shopSearchTerm": "shop search terms",
+        "lockScreen": "\"Show on lock screen\"",
+        "otherPhotos": "further photos"
+      }
     },
     "import": {
       "header": "Import",
-      "hint": "Cards in the file replace cards with the same ID. Your other cards are kept.",
+      "hint": "Reads MyCards and Catima files. Cards from a MyCards file replace cards with the same ID; cards from a Catima file are always added as new cards. Your other cards are kept.",
       "clean": "Clean import",
       "cleanHint": "Deletes all cards that are not in the file.",
       "button": "Import",
@@ -172,11 +184,14 @@
       "confirmMessage": "Cards with the same ID will be overwritten.",
       "confirmCleanMessage": "All {{ existing }} current cards will be deleted and replaced by the cards from the file.",
       "confirm": "Import",
-      "done": "{{ count }} cards imported."
+      "done": "{{ count }} cards imported.",
+      "confirmCatimaMessage": "The cards are added as new cards. Cards you already have are not replaced.",
+      "unsupportedHeader": "Barcodes not supported",
+      "unsupportedMessage": "MyCards cannot show the barcode of these cards, so they were imported without barcode type: {{ cards }}. The card ID is still shown."
     },
     "errors": {
-      "unreadable": "This file is not a MyCards export.",
-      "invalidContent": "This file is not a valid MyCards export.",
+      "unreadable": "This file is not a MyCards or Catima export.",
+      "invalidContent": "This file is not a valid MyCards or Catima export.",
       "newerVersion": "This file was created by a newer version of MyCards. Update the app and try again.",
       "importFailed": "Import failed. Your cards were not changed."
     }

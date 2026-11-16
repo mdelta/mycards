@@ -14,6 +14,7 @@ describe('PhotoService', () => {
   const processor = {
     resize: vi.fn(async () => new Uint8Array([2])),
     cropSquare: vi.fn(async () => new Uint8Array([3])),
+    toPng: vi.fn(async () => new Uint8Array([4])),
   } satisfies ImageProcessor;
   const source = { pick: vi.fn(async () => picked) };
   let service: PhotoService;

@@ -14,6 +14,14 @@
       <ion-item lines="none">
         <ion-note>{{ t('export.hint') }}</ion-note>
       </ion-item>
+      <ion-radio-group [value]="format()" (ionChange)="onFormat($event)">
+        <ion-item>
+          <ion-radio value="mycards">{{ t('export.formatMyCards') }}</ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-radio value="catima">{{ t('export.formatCatima') }}</ion-radio>
+        </ion-item>
+      </ion-radio-group>
       <ion-item>
         <ion-input
           type="password"

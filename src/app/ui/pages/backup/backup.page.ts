@@ -12,6 +12,8 @@ import {
   IonList,
   IonListHeader,
   IonNote,
+  IonRadio,
+  IonRadioGroup,
   IonText,
   IonTitle,
   IonToggle,
@@ -21,13 +23,14 @@ import {
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { BackupError } from '../../../domain/model/backup-error';
-import type { Card } from '../../../domain/model/card';
 import type { BackupContent } from '../../../domain/services/backup-document';
+import type { BackupFormat } from '../../../domain/services/backup-service';
 import { BackupService } from '../../../domain/services/backup-service';
 import { CardService } from '../../../domain/services/card-service';
+import type { CatimaLoss } from '../../../domain/services/catima-format';
 import { BACKUP_FILES } from '../../../infrastructure/providers';
 
-/** Export and import in the own format (F-05, F-11, ADR-0004). */
+/** Export and import in the own format and the Catima format (F-05, F-11, ADR-0004). */
 @Component({
   selector: 'app-backup',
   templateUrl: 'backup.page.html',
@@ -43,6 +46,8 @@ import { BACKUP_FILES } from '../../../infrastructure/providers';
     IonList,
     IonListHeader,
     IonNote,
+    IonRadio,
+    IonRadioGroup,
     IonText,
     IonTitle,
     IonToggle,
@@ -62,6 +67,7 @@ export class BackupPage {
   readonly passwordRepeat = signal('');
   readonly passwordMismatch = signal(false);
   readonly clean = signal(false);
+  readonly format = signal<BackupFormat>('mycards');
   readonly busy = signal(false);
 
   onPassword(event: CustomEvent<{ value?: string | null }>, repeat: boolean): void {
@@ -71,6 +77,10 @@ export class BackupPage {
       this.passwordRepeat.set('');
     }
     this.passwordMismatch.set(false);
+  }
+
+  onFormat(event: CustomEvent<{ value: BackupFormat }>): void {
+    this.format.set(event.detail.value);
   }
 
   onClean(event: CustomEvent<{ checked: boolean }>): void {
@@ -84,7 +94,10 @@ export class BackupPage {
     }
     await this.run(async () => {
       try {
-        await this.files.share(await this.backup.createBackup(this.password()));
+        if (this.format() === 'catima' && !(await this.acceptLosses(await this.backup.catimaLosses()))) {
+          return;
+        }
+        await this.files.share(await this.backup.createBackup(this.password(), this.format()));
         this.password.set('');
         this.passwordRepeat.set('');
         await this.toast('export.done');
@@ -99,9 +112,17 @@ export class BackupPage {
       try {
         const file = await this.files.pick();
         const content = file && (await this.readWithPassword(file.data));
-        if (content && (await this.confirmImport(content.cards))) {
+        if (content && (await this.confirmImport(content))) {
           await this.backup.restoreBackup(content, { clean: this.clean() });
           await this.toast('import.done', { count: content.cards.length });
+          if (content.unsupportedBarcodes?.length) {
+            await this.inform(
+              'import.unsupportedHeader',
+              this.t('import.unsupportedMessage', {
+                cards: content.unsupportedBarcodes.map((u) => `${u.storeName} (${u.barcodeType})`).join(', '),
+              }),
+            );
+          }
         }
       } catch (error) {
         await this.toast(error instanceof BackupError ? `errors.${error.reason}` : 'errors.importFailed');
@@ -142,10 +163,35 @@ export class BackupPage {
     return role === 'confirm' ? (data?.values.password ?? '') : undefined;
   }
 
-  private async confirmImport(cards: Card[]): Promise<boolean> {
+  /** Asks before a Catima export drops fields Catima has no place for. */
+  private async acceptLosses(losses: CatimaLoss[]): Promise<boolean> {
+    if (!losses.length) {
+      return true;
+    }
+    const fields = losses.map((loss) => this.t(`export.losses.${loss}`)).join(', ');
+    const alert = await this.alerts.create({
+      header: this.t('export.lossHeader'),
+      message: this.t('export.lossMessage', { fields }),
+      buttons: [
+        { text: this.t('import.cancel'), role: 'cancel' },
+        { text: this.t('export.button'), role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    return (await alert.onDidDismiss()).role === 'confirm';
+  }
+
+  private async inform(header: string, message: string): Promise<void> {
+    const alert = await this.alerts.create({ header: this.t(header), message, buttons: [this.t('import.ok')] });
+    await alert.present();
+    await alert.onDidDismiss();
+  }
+
+  private async confirmImport(content: BackupContent): Promise<boolean> {
+    const cards = content.cards;
     const message = this.clean()
       ? this.t('import.confirmCleanMessage', { existing: (await this.cardService.list()).length })
-      : this.t('import.confirmMessage');
+      : this.t(content.format === 'catima' ? 'import.confirmCatimaMessage' : 'import.confirmMessage');
     const alert = await this.alerts.create({
       header: this.t('import.confirmHeader', { count: cards.length }),
       message,

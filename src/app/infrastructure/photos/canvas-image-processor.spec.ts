@@ -35,11 +35,19 @@ describe('CanvasImageProcessor', () => {
     expect(context.drawImage).toHaveBeenCalledWith(bitmap, 500, 0, 3000, 3000, 0, 0, 256, 256);
   });
 
+  it('re-encodes an image as PNG at its size', async () => {
+    expect(await processor.toPng(new Uint8Array([1]))).toEqual(new Uint8Array([9]));
+
+    expect([canvas.width, canvas.height]).toEqual([4000, 3000]);
+    expect(context.drawImage).toHaveBeenCalledWith(bitmap, 0, 0);
+    expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
+  });
+
   it('fails without a 2D context or when encoding fails', async () => {
     canvas.getContext.mockReturnValueOnce(null);
     await expect(processor.resize(new Uint8Array([1]), 1600, 0.8)).rejects.toThrow('Canvas');
 
     blob = null;
-    await expect(processor.resize(new Uint8Array([1]), 1600, 0.8)).rejects.toThrow('JPEG');
+    await expect(processor.resize(new Uint8Array([1]), 1600, 0.8)).rejects.toThrow('encoding');
   });
 });

@@ -33,6 +33,13 @@ Users of Catima should be able to switch to MyCards.
   [formats/mycards-backup.md](../../formats/mycards-backup.md). The "clean import" setting is a
   switch on the export/import screen, off by default, and asks for confirmation.
 
+- [DECIDED] (step 8) **Catima format** as observed in three sample exports
+  ([formats/catima-export.md](../../formats/catima-export.md)). Import detects the format from the
+  file. A Catima import always **adds** its cards as new cards and never replaces existing ones (PO
+  decision); "clean import" still deletes everything first. Barcodes MyCards cannot show are imported
+  without barcode type and listed. Catima export is a choice on the export screen, with the same
+  optional AES-256 password; before exporting, the app lists the fields Catima has no place for.
+
 ## Consequences
 
 - Format specification lives in `docs/` and is versioned with the code.

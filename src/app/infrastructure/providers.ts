@@ -139,6 +139,7 @@ export function backupServiceProvider(): Provider {
         new SystemClock(),
         new UuidGenerator(),
         inject(PHOTO_STORE),
+        new CanvasImageProcessor(inject(DOCUMENT)),
       ),
   };
 }

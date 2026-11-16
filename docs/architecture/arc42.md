@@ -128,7 +128,7 @@ pure-TypeScript way on Android to render on/over the lock screen.
 | Barcode scanning | Google ML Kit | [DECIDED] ADR-0010 |
 | Persistence | SQLite plugin · key-value (Preferences) · JSON file in app sandbox | [DECIDED] SQLite for card data, photos as files in the app sandbox referenced from SQLite (ADR-0003) |
 | Barcode rendering | `bwip-js` (many formats incl. Aztec, PDF417, DataMatrix) · `zxing` | [DECIDED] `bwip-js`, renders offline (ADR-0017) |
-| Export format | User chooses: own format (ZIP, optional password) or Catima format; import replaces, no merge | [DECIDED] ADR-0004 |
+| Export format | User chooses: own format (ZIP, optional password) or Catima format; import replaces (own format) or adds new cards (Catima), no merge | [DECIDED] ADR-0004 |
 | Nearby shop search | Open external map app with search query – no location permission, no API key | [DECIDED] ADR-0005 |
 | Lock-screen display | Quick-Settings tile → separate native Activity with pre-rendered barcode images, marked cards only, swipe, favorites first | [DECIDED] ADR-0006 |
 | Build & release | GitHub Actions building signed AAB + upload to Google Play | [DECIDED] ADR-0008. Tooling open [OPEN Q-14] |
