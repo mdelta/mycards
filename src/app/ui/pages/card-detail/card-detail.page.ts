@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, inject, input, signal } from '@angular/core';
 import type { SafeUrl } from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -28,18 +29,21 @@ import { barcodeValueOf } from '../../../domain/services/barcode-value';
 import { CardService } from '../../../domain/services/card-service';
 import { isWebUrl, openShopSearch } from '../../../domain/services/links';
 import { BARCODE_RENDERER, EXTERNAL_LAUNCHER, PRESENTATION_MODE } from '../../../infrastructure/providers';
+import { PhotoUrlPipe } from '../../photo-url.pipe';
 
 type BarcodeView = { kind: 'loading' } | { kind: 'none' } | { kind: 'error' } | { kind: 'image'; url: SafeUrl };
 
 /**
  * Shows a card at the checkout (F-03, quality goal 1): large barcode, card ID, bright screen. Below
- * it: details, tags, websites and the shop search (F-06, F-07, ADR-0005).
+ * it: details, tags, websites, the shop search (F-06, F-07, ADR-0005) and photos (F-09).
  */
 @Component({
   selector: 'app-card-detail',
   templateUrl: 'card-detail.page.html',
   styleUrl: 'card-detail.page.scss',
   imports: [
+    AsyncPipe,
+    PhotoUrlPipe,
     IonBackButton,
     IonButton,
     IonButtons,

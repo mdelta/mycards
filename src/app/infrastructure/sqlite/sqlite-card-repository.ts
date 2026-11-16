@@ -1,5 +1,5 @@
 import type { BarcodeType } from '../../domain/model/barcode-type';
-import type { Card, Tag, WebsiteLink } from '../../domain/model/card';
+import type { Card, Photo, PhotoRole, Tag, WebsiteLink } from '../../domain/model/card';
 import type { CardRepository } from '../../domain/ports/card-repository';
 
 import type { SqlDatabase, SqlValue } from './sql-database';
@@ -75,6 +75,16 @@ async function writeCard(tx: SqlDatabase, card: Card): Promise<void> {
       position,
     ]);
   }
+  await tx.run('DELETE FROM photo WHERE card_id = ?', [card.id]);
+  for (const [position, photo] of card.photos.entries()) {
+    await tx.run('INSERT INTO photo (id, card_id, role, file_ref, position) VALUES (?, ?, ?, ?, ?)', [
+      photo.id,
+      card.id,
+      photo.role,
+      `${photo.id}.jpg`,
+      position,
+    ]);
+  }
 }
 
 function writeTag(tx: SqlDatabase, tag: Tag): Promise<void> {
@@ -96,14 +106,18 @@ export class SqliteCardRepository implements CardRepository {
     const rows = await this.db.query<CardRow>('SELECT * FROM card');
     const tags = await this.tagIdsByCard();
     const websites = await this.websitesByCard();
-    return rows.map((row) => toCard(row, tags.get(row.id) ?? [], websites.get(row.id) ?? []));
+    const photos = await this.photosByCard();
+    return rows.map((row) => toCard(row, tags.get(row.id) ?? [], websites.get(row.id) ?? [], photos.get(row.id) ?? []));
   }
 
   async findById(id: string): Promise<Card | undefined> {
     const [row] = await this.db.query<CardRow>('SELECT * FROM card WHERE id = ?', [id]);
-    return (
-      row && toCard(row, (await this.tagIdsByCard(id)).get(id) ?? [], (await this.websitesByCard(id)).get(id) ?? [])
-    );
+    if (!row) {
+      return undefined;
+    }
+    const tags = (await this.tagIdsByCard(id)).get(id) ?? [];
+    const websites = (await this.websitesByCard(id)).get(id) ?? [];
+    return toCard(row, tags, websites, (await this.photosByCard(id)).get(id) ?? []);
   }
 
   save(card: Card): Promise<void> {
@@ -179,6 +193,18 @@ export class SqliteCardRepository implements CardRepository {
     }
     return result;
   }
+
+  private async photosByCard(cardId?: string): Promise<Map<string, Photo[]>> {
+    type Row = { card_id: string; id: string; role: PhotoRole };
+    const rows = cardId
+      ? await this.db.query<Row>('SELECT card_id, id, role FROM photo WHERE card_id = ? ORDER BY position', [cardId])
+      : await this.db.query<Row>('SELECT card_id, id, role FROM photo ORDER BY card_id, position');
+    const result = new Map<string, Photo[]>();
+    for (const { card_id, id, role } of rows) {
+      result.set(card_id, [...(result.get(card_id) ?? []), { id, role }]);
+    }
+    return result;
+  }
 }
 
 function toRow(card: Card): Record<(typeof COLUMNS)[number], SqlValue> {
@@ -206,7 +232,7 @@ function toRow(card: Card): Record<(typeof COLUMNS)[number], SqlValue> {
   };
 }
 
-function toCard(row: CardRow, tagIds: string[], websites: WebsiteLink[]): Card {
+function toCard(row: CardRow, tagIds: string[], websites: WebsiteLink[], photos: Photo[]): Card {
   const card: Card = {
     id: row.id,
     storeName: row.store_name,
@@ -227,6 +253,7 @@ function toCard(row: CardRow, tagIds: string[], websites: WebsiteLink[]): Card {
     shopSearchTerm: row.shop_search_term ?? undefined,
     tagIds,
     websites,
+    photos,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastUsedAt: row.last_used_at ?? undefined,

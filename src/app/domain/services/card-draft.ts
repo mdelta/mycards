@@ -25,6 +25,7 @@ export type CardDraft = Partial<
     | 'shopSearchTerm'
     | 'tagIds'
     | 'websites'
+    | 'photos'
   >
 >;
 

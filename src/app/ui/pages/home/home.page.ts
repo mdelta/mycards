@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import type { ViewWillEnter } from '@ionic/angular';
@@ -24,11 +25,13 @@ import { addIcons } from 'ionicons';
 import { add, scanOutline, star, swapVerticalOutline } from 'ionicons/icons';
 
 import type { Card, Tag } from '../../../domain/model/card';
+import { photoOf } from '../../../domain/model/photo';
 import { ScannerNotReadyError } from '../../../domain/ports/barcode-scanner';
 import { filterCards } from '../../../domain/services/card-filter';
 import { CardService } from '../../../domain/services/card-service';
 import { BARCODE_SCANNER } from '../../../infrastructure/providers';
 import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.component';
+import { PhotoUrlPipe } from '../../photo-url.pipe';
 
 /** Card list: favorites first, search, tag filter (F-04, F-07, F-12); entry point for scanning (F-02). */
 @Component({
@@ -36,6 +39,8 @@ import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.co
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   imports: [
+    AsyncPipe,
+    PhotoUrlPipe,
     IonButton,
     IonButtons,
     CardAvatarComponent,
@@ -58,6 +63,7 @@ import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.co
 })
 export class HomePage implements ViewWillEnter {
   private readonly cardService = inject(CardService);
+  readonly iconPhotoOf = (card: Card): string | undefined => photoOf(card.photos, 'icon')?.id;
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastController);
   private readonly transloco = inject(TranslocoService);

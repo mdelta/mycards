@@ -99,7 +99,12 @@ presentation, privacy, data safety, maintainability, offline).
 - Take/choose photos (front/back/other), store as compressed files in the app sandbox,
   reference from SQLite, include in export (Step 5 format already has the folder).
 - Risk mitigation for the Auto Backup quota (arc42 §11.1): size limit/compression.
-- [DECIDED] Camera plugin `@capacitor/camera`. **[DECIDE]** max photo size.
+- [DECIDED] Camera plugin `@capacitor/camera` (8.2.6; system camera app and photo picker, no
+  permission).
+- [DECIDED] Photos at most 1600 px on the longer edge, JPEG 80 %. Custom icon image (ADR-0016): the
+  centered square at 256 px.
+- [DECIDED] The editor offers front and back only; model, database and export already allow any
+  number of further (`other`) photos.
 
 ### Step 8 – Catima compatibility (F-11; ADR-0004, ADR-0007)
 

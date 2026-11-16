@@ -174,4 +174,60 @@ describe('backup document', () => {
   it('rejects duplicate card ids', () => {
     expect(reasonOf(documentWith({ cards: [aCard(), aCard()] }))).toBe('invalidContent');
   });
+
+  describe('photos', () => {
+    const withPhotos = (photos: unknown): string => documentWith({ cards: [{ ...aCard(), photos }] });
+
+    it('round-trips photo references', () => {
+      const card = aCard({
+        photos: [
+          { id: 'p1', role: 'front' },
+          { id: 'p2', role: 'other' },
+          { id: 'p3', role: 'other' },
+        ],
+      });
+
+      expect(parseBackupDocument(serializeBackupDocument({ cards: [card], tags: [] }, 'now')).cards).toEqual([card]);
+    });
+
+    it('defaults missing photos to an empty list', () => {
+      const { photos: _, ...card } = aCard();
+
+      expect(parseBackupDocument(documentWith({ cards: [card] })).cards[0].photos).toEqual([]);
+    });
+
+    it.each([
+      ['an unknown role', [{ id: 'p1', role: 'selfie' }]],
+      ['an invalid id', [{ id: '../x', role: 'front' }]],
+      [
+        'two front photos',
+        [
+          { id: 'p1', role: 'front' },
+          { id: 'p2', role: 'front' },
+        ],
+      ],
+      [
+        'a duplicate id',
+        [
+          { id: 'p1', role: 'other' },
+          { id: 'p1', role: 'other' },
+        ],
+      ],
+      ['a non-array', 'p1'],
+    ])('rejects %s', (_, photos) => {
+      expect(() => parseBackupDocument(withPhotos(photos))).toThrow(BackupError);
+    });
+
+    it('rejects a photo id used by two cards', () => {
+      const photos = [{ id: 'p1', role: 'front' }];
+      const json = documentWith({
+        cards: [
+          { ...aCard({ id: 'a' }), photos },
+          { ...aCard({ id: 'b' }), photos },
+        ],
+      });
+
+      expect(() => parseBackupDocument(json)).toThrow(BackupError);
+    });
+  });
 });

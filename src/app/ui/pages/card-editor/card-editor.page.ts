@@ -1,8 +1,10 @@
+import { AsyncPipe } from '@angular/common';
 import type { OnInit } from '@angular/core';
 import { Component, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
+  ActionSheetController,
   AlertController,
   IonAccordion,
   IonAccordionGroup,
@@ -21,35 +23,43 @@ import {
   IonSelectOption,
   IonText,
   IonTextarea,
+  IonThumbnail,
   IonTitle,
   IonToggle,
   IonToolbar,
   NavController,
+  ToastController,
 } from '@ionic/angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { addIcons } from 'ionicons';
-import { add, closeCircleOutline, colorWandOutline, trash } from 'ionicons/icons';
+import { add, cameraOutline, closeCircleOutline, colorWandOutline, imageOutline, trash } from 'ionicons/icons';
 import { map } from 'rxjs';
 
 import type { BarcodeType } from '../../../domain/model/barcode-type';
 import { BARCODE_TYPES, isBarcodeType } from '../../../domain/model/barcode-type';
-import type { Card, Tag, WebsiteLink } from '../../../domain/model/card';
+import type { Card, Photo, PhotoRole, Tag, WebsiteLink } from '../../../domain/model/card';
 import { CARD_COLORS, cardInitialOf, isCardColor } from '../../../domain/model/card-appearance';
+import { photoOf, withPhoto } from '../../../domain/model/photo';
+import type { PhotoSourceKind } from '../../../domain/ports/photo-source';
 import type { CardDraft, CardValidationError } from '../../../domain/services/card-draft';
 import { CardService, InvalidCardError } from '../../../domain/services/card-service';
+import { PhotoService } from '../../../domain/services/photo-service';
 import { CARD_ICONS, CARD_ICON_KEYS } from '../../card-icons';
 import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.component';
+import { PhotoUrlPipe } from '../../photo-url.pipe';
 
 /**
  * Manual card creation and editing (F-01, F-10), including color, icon, tags and links (F-06, F-07,
- * ADR-0016). Validation rules live in `CardService`.
+ * ADR-0016) and photos (F-09). Validation rules live in `CardService`.
  */
 @Component({
   selector: 'app-card-editor',
   templateUrl: 'card-editor.page.html',
   styleUrl: 'card-editor.page.scss',
   imports: [
+    AsyncPipe,
     CardAvatarComponent,
+    PhotoUrlPipe,
     IonAccordion,
     IonAccordionGroup,
     IonBackButton,
@@ -67,6 +77,7 @@ import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.co
     IonSelectOption,
     IonText,
     IonTextarea,
+    IonThumbnail,
     IonTitle,
     IonToggle,
     IonToolbar,
@@ -78,6 +89,9 @@ export class CardEditorPage implements OnInit {
   private readonly cardService = inject(CardService);
   private readonly nav = inject(NavController);
   private readonly alerts = inject(AlertController);
+  private readonly actionSheets = inject(ActionSheetController);
+  private readonly toasts = inject(ToastController);
+  private readonly photoService = inject(PhotoService);
   private readonly transloco = inject(TranslocoService);
 
   /** Route parameter; undefined when creating a new card. */
@@ -96,6 +110,9 @@ export class CardEditorPage implements OnInit {
   /** Edited outside the reactive form: rows are added and removed freely. */
   readonly websites = signal<Required<WebsiteLink>[]>([]);
   readonly websiteError = signal(false);
+  /** The model allows more photos (`other`); the editor offers front and back for now. */
+  readonly photoRoles = ['front', 'back'] as const;
+  readonly photos = signal<Photo[]>([]);
   readonly form = inject(NonNullableFormBuilder).group({
     storeName: '',
     cardId: '',
@@ -120,7 +137,7 @@ export class CardEditorPage implements OnInit {
   });
 
   constructor() {
-    addIcons({ add, closeCircleOutline, colorWandOutline, trash });
+    addIcons({ add, cameraOutline, closeCircleOutline, colorWandOutline, imageOutline, trash });
     // A barcode value error refers to the previous type, so it no longer applies after a type change.
     this.form.controls.barcodeType.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       for (const control of [this.form.controls.cardId, this.form.controls.barcodeValue]) {
@@ -147,6 +164,7 @@ export class CardEditorPage implements OnInit {
     if (card) {
       this.form.setValue(toFormValue(card));
       this.websites.set(card.websites.map((site) => ({ label: site.label ?? '', url: site.url })));
+      this.photos.set(card.photos);
     } else {
       this.notFound.set(true);
     }
@@ -168,8 +186,53 @@ export class CardEditorPage implements OnInit {
     this.form.controls.color.setValue(color);
   }
 
+  /** A built-in icon or the first letter (`''`) replaces a custom icon image. */
   selectIcon(icon: string): void {
     this.form.controls.icon.setValue(icon);
+    this.photos.update((photos) => withPhoto(photos, 'icon', undefined));
+  }
+
+  photoIdOf(role: PhotoRole): string | undefined {
+    return photoOf(this.photos(), role)?.id;
+  }
+
+  /** Takes, picks or removes the front or back photo, or the custom icon image. */
+  async editPhoto(role: Exclude<PhotoRole, 'other'>): Promise<void> {
+    const sheet = await this.actionSheets.create({
+      header: this.translate(`photos.${role}`),
+      buttons: [
+        { text: this.translate('photos.take'), icon: 'camera-outline', data: 'camera' },
+        { text: this.translate('photos.choose'), icon: 'image-outline', data: 'gallery' },
+        ...(this.photoIdOf(role)
+          ? [{ text: this.translate('photos.remove'), icon: 'trash', role: 'destructive', data: 'remove' }]
+          : []),
+        { text: this.translate('cancel'), role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+    const { data } = await sheet.onDidDismiss<PhotoSourceKind | 'remove'>();
+    if (data === 'remove') {
+      this.photos.update((photos) => withPhoto(photos, role, undefined));
+    } else if (data === 'camera' || data === 'gallery') {
+      await this.capture(role, data);
+    }
+  }
+
+  private async capture(role: Exclude<PhotoRole, 'other'>, source: PhotoSourceKind): Promise<void> {
+    let id: string | undefined;
+    try {
+      id = await this.photoService.capture(source, role === 'icon' ? 'icon' : 'photo');
+    } catch {
+      const toast = await this.toasts.create({ message: this.translate('photos.failed'), duration: 3000 });
+      await toast.present();
+      return;
+    }
+    if (id) {
+      this.photos.update((photos) => withPhoto(photos, role, id));
+      if (role === 'icon') {
+        this.form.controls.icon.setValue('');
+      }
+    }
   }
 
   addWebsite(): void {
@@ -214,7 +277,7 @@ export class CardEditorPage implements OnInit {
   }
 
   async save(): Promise<void> {
-    const draft = toDraft(this.form.getRawValue(), this.websites());
+    const draft = { ...toDraft(this.form.getRawValue(), this.websites()), photos: this.photos() };
     const id = this.id();
     try {
       await (id ? this.cardService.update(id, draft) : this.cardService.create(draft));
@@ -225,6 +288,7 @@ export class CardEditorPage implements OnInit {
       }
       throw error;
     }
+    this.pruneUnusedPhotos();
     await (id ? this.nav.navigateBack(['/cards', id]) : this.nav.navigateBack('/home'));
   }
 
@@ -269,8 +333,14 @@ export class CardEditorPage implements OnInit {
     const { role } = await alert.onDidDismiss();
     if (role === 'destructive') {
       await this.cardService.delete(id);
+      this.pruneUnusedPhotos();
       await this.nav.navigateBack('/home');
     }
+  }
+
+  /** Replaced and removed photos, and photos of discarded edits, are deleted after a write. */
+  private pruneUnusedPhotos(): void {
+    this.photoService.pruneUnused().catch(() => undefined);
   }
 
   private translate(key: string, params?: Record<string, string>): string {

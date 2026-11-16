@@ -47,6 +47,7 @@ describe('CardService', () => {
         showOnLockScreen: false,
         tagIds: [],
         websites: [],
+        photos: [],
         createdAt: NOW,
         updatedAt: NOW,
       });

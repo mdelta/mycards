@@ -29,6 +29,11 @@ describe('SqliteCardRepository', () => {
     shopSearchTerm: 'Store Berlin',
     tagIds: ['t2', 't1'],
     websites: [{ label: 'Shop', url: 'https://shop.example.com' }, { url: 'https://example.org' }],
+    photos: [
+      { id: 'p-back', role: 'back' },
+      { id: 'p-front', role: 'front' },
+      { id: 'p-other', role: 'other' },
+    ],
     lastUsedAt: '2026-02-01T00:00:00.000Z',
   });
 
@@ -146,6 +151,14 @@ describe('SqliteCardRepository', () => {
 
       expect((await repository.findById('full'))?.websites).toEqual([{ url: 'https://new.example.com' }]);
       expect((await repository.findAll())[0].websites).toEqual([{ url: 'https://new.example.com' }]);
+    });
+
+    it('keeps the order of photos and replaces them on save', async () => {
+      await repository.save(fullCard);
+      await repository.save({ ...fullCard, photos: [{ id: 'p-icon', role: 'icon' }] });
+
+      expect((await repository.findById('full'))?.photos).toEqual([{ id: 'p-icon', role: 'icon' }]);
+      expect((await repository.findAll())[0].photos).toEqual([{ id: 'p-icon', role: 'icon' }]);
     });
 
     it('creates and renames tags', async () => {
