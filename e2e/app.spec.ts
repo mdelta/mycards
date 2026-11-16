@@ -227,3 +227,33 @@ test('adds front and back photos and a custom icon image', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(detail(page).getByTestId('photo')).toHaveCount(1);
 });
+
+test('exports in Catima format and imports the file as new cards', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Add card' }).click();
+  await field(page, 'Store name').fill('Bakery');
+  await field(page, 'Card ID').fill('111');
+  await field(page, 'Homepage (https://…)').fill('https://bakery.example.com/');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(cardNames(page)).toHaveText(['Bakery']);
+
+  await page.getByRole('link', { name: 'Export and import' }).click();
+  await page.getByRole('radio', { name: 'Catima format (for the Catima app)' }).click();
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('Catima has no place for: homepage.');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Export' }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toMatch(/^catima_\d{8}\.zip$/);
+  const exportPath = await download.path();
+
+  const chooserEvent = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await (await chooserEvent).setFiles(exportPath);
+  await expect(page.getByRole('alertdialog')).toContainText('added as new cards');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Import' }).click();
+  await expect(page.getByText('1 cards imported.')).toBeVisible();
+
+  await page.locator('app-backup ion-back-button').click();
+  await expect(cardNames(page)).toHaveText(['Bakery', 'Bakery']);
+});

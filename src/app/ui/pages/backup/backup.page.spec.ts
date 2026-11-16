@@ -8,6 +8,7 @@ import { aCard } from '../../../../testing/card-builder';
 import { InMemoryCardRepository } from '../../../../testing/in-memory-card-repository';
 import type { BackupFiles, BinaryFile } from '../../../domain/ports/backup-files';
 import { BackupService } from '../../../domain/services/backup-service';
+import { ZipJsArchiveCodec } from '../../../infrastructure/backup/zipjs-archive-codec';
 import {
   BACKUP_FILES,
   CARD_REPOSITORY,
@@ -216,7 +217,7 @@ describe('BackupPage', () => {
 
     await page.importCards();
 
-    expect(lastToast()).toBe('This file is not a MyCards export.');
+    expect(lastToast()).toBe('This file is not a MyCards or Catima export.');
   });
 
   it('reports unexpected import errors', async () => {
@@ -227,5 +228,59 @@ describe('BackupPage', () => {
     await page.importCards();
 
     expect(lastToast()).toBe('Import failed. Your cards were not changed.');
+  });
+
+  describe('Catima format', () => {
+    beforeEach(() => page.onFormat(new CustomEvent('ionChange', { detail: { value: 'catima' as const } })));
+
+    const alertMessages = (): string[] =>
+      (alertController.create.mock.calls as unknown as [{ message?: string }][]).map(([a]) => a.message ?? '');
+
+    it('exports a Catima file and imports it again as new cards', async () => {
+      toPick = await exportWith();
+      expect(toPick.name).toMatch(/^catima_\d{8}\.zip$/);
+      answers = [{ role: 'confirm' }];
+
+      await page.importCards();
+
+      expect(alertMessages()).toEqual([en.backup.import.confirmCatimaMessage]);
+      expect((await repository.findAll()).map((c) => c.storeName)).toEqual(['Alpha', 'Bravo', 'Alpha', 'Bravo']);
+    });
+
+    it('asks before dropping fields Catima has no place for', async () => {
+      await repository.save(aCard({ id: 'c', storeName: 'Charlie', homepageUrl: 'https://a.de' }));
+      answers = [{ role: 'cancel' }];
+
+      expect(await exportWith()).toBeUndefined();
+      expect(alertMessages()).toEqual(['Catima has no place for: homepage. Export anyway?']);
+
+      answers = [{ role: 'confirm' }];
+      expect((await exportWith()).name).toMatch(/^catima_/);
+    });
+
+    it('lists cards imported without barcode type', async () => {
+      const csv = [
+        '2',
+        '',
+        '_id',
+        '',
+        '_id,store,note,validfrom,expiry,balance,balancetype,cardid,barcodeid,barcodetype,barcodeencoding,headercolor,starstatus,lastused,archive',
+        '1,Shop,,,,0,,abc,,MAXICODE,UTF-8,-416706,0,0,0',
+        '',
+        'cardId,groupId',
+        '',
+      ].join('\r\n');
+      toPick = {
+        name: 'catima.zip',
+        data: await new ZipJsArchiveCodec().pack([{ name: 'catima.csv', data: new TextEncoder().encode(csv) }]),
+      };
+      answers = [{ role: 'confirm' }, { role: 'cancel' }];
+
+      await page.importCards();
+
+      expect(alertHeaders()).toEqual(['Import 1 cards?', 'Barcodes not supported']);
+      expect(alertMessages()[1]).toContain('Shop (MAXICODE)');
+      expect(lastToast()).toBe('1 cards imported.');
+    });
   });
 });

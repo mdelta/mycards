@@ -24,6 +24,11 @@ class FakeArchiveCodec implements ArchiveCodec {
 }
 
 describe('BackupService', () => {
+  const images = {
+    resize: vi.fn(async (_image: Uint8Array, _maxEdge: number, _quality: number) => new Uint8Array([7])),
+    cropSquare: vi.fn(async (_image: Uint8Array, _size: number, _quality: number) => new Uint8Array([8])),
+    toPng: vi.fn(async (_image: Uint8Array) => new Uint8Array([9])),
+  };
   const now = '2026-11-14T12:00:00.000Z';
   let repository: InMemoryCardRepository;
   let archive: FakeArchiveCodec;
@@ -34,7 +39,7 @@ describe('BackupService', () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a' }), aCard({ id: 'b', storeName: 'Bravo' })]);
     archive = new FakeArchiveCodec();
     photos = new InMemoryPhotoStore();
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos, images);
   });
 
   function documentEntry(json: string): BinaryFile {
@@ -79,6 +84,7 @@ describe('BackupService', () => {
       cards: [aCard({ id: 'x' })],
       tags: [],
       photos: new Map(),
+      format: 'mycards',
     });
     expect((await repository.findAll()).map((card) => card.id)).toEqual(['a', 'b']);
   });
@@ -116,7 +122,7 @@ describe('BackupService', () => {
 
   it('exports tags with the cards', async () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos, images);
 
     await service.createBackup();
 
@@ -127,7 +133,7 @@ describe('BackupService', () => {
 
   it('normal import reuses existing tags with the same name', async () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos, images);
 
     await service.restoreBackup(
       {
@@ -149,7 +155,7 @@ describe('BackupService', () => {
 
   it('clean import replaces all tags', async () => {
     repository = new InMemoryCardRepository([aCard({ id: 'a', tagIds: ['t1'] })], [{ id: 't1', name: 'Food' }]);
-    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
+    service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos, images);
 
     await service.restoreBackup(
       { cards: [aCard({ id: 'b', tagIds: ['t2'] })], tags: [{ id: 't2', name: 'Food' }] },
@@ -164,7 +170,7 @@ describe('BackupService', () => {
 
     function useCards(...cards: ReturnType<typeof aCard>[]): void {
       repository = new InMemoryCardRepository(cards);
-      service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos);
+      service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'new-id' }, photos, images);
     }
 
     it('exports photo files next to the document', async () => {
@@ -240,6 +246,113 @@ describe('BackupService', () => {
 
       expect(await photos.read('p1')).toEqual(old);
       expect((await repository.findById('a'))?.photos).toEqual([{ id: 'p1', role: 'front' }]);
+    });
+  });
+
+  describe('Catima format', () => {
+    const header =
+      '_id,store,note,validfrom,expiry,balance,balancetype,cardid,barcodeid,barcodetype,barcodeencoding,headercolor,starstatus,lastused,archive';
+    const csv = (cards: string[]): Uint8Array =>
+      new TextEncoder().encode(['2', '', '_id', '', header, ...cards, '', 'cardId,groupId', ''].join('\r\n'));
+    const png = new Uint8Array([0x89, 0x50]);
+
+    beforeEach(() => {
+      let n = 0;
+      service = new BackupService(repository, archive, { now: () => now }, { newId: () => `id${++n}` }, photos, images);
+      vi.clearAllMocks();
+    });
+
+    it('reads a Catima export and shrinks its photos', async () => {
+      archive.entries = [
+        { name: 'catima.csv', data: csv(['1,Bakery,,,,0,,111,,QR_CODE,UTF-8,-769226,0,0,0']) },
+        { name: 'card_1_front.png', data: png },
+        { name: 'card_1_icon.png', data: png },
+      ];
+
+      const content = await service.readBackup(new Uint8Array());
+
+      expect(content.format).toBe('catima');
+      expect(content.cards.map((card) => [card.storeName, card.photos])).toEqual([
+        [
+          'Bakery',
+          [
+            { id: 'id1', role: 'front' },
+            { id: 'id2', role: 'icon' },
+          ],
+        ],
+      ]);
+      expect(images.resize).toHaveBeenCalledWith(png, 1600, 0.8);
+      expect(images.cropSquare).toHaveBeenCalledWith(png, 256, 0.8);
+      expect(content.photos).toEqual(
+        new Map([
+          ['id1', new Uint8Array([7])],
+          ['id2', new Uint8Array([8])],
+        ]),
+      );
+    });
+
+    it('imports the card without a photo that cannot be decoded', async () => {
+      images.resize.mockRejectedValueOnce(new Error('decode failed'));
+      archive.entries = [
+        { name: 'catima.csv', data: csv(['1,Bakery,,,,0,,111,,,UTF-8,-769226,0,0,0']) },
+        { name: 'card_1_back.png', data: png },
+      ];
+
+      const content = await service.readBackup(new Uint8Array());
+
+      expect(content.cards[0].photos).toEqual([]);
+      expect(content.photos?.size).toBe(0);
+    });
+
+    it('rejects an archive with neither a MyCards nor a Catima document', async () => {
+      archive.entries = [{ name: 'other.csv', data: new Uint8Array() }];
+
+      expect(await reasonOf(service.readBackup(new Uint8Array()))).toBe('invalidContent');
+    });
+
+    it('adds Catima cards as new cards on a normal import', async () => {
+      archive.entries = [{ name: 'catima.csv', data: csv(['1,Bakery,,,,0,,111,,,UTF-8,-769226,0,0,0']) }];
+
+      await service.restoreBackup(await service.readBackup(new Uint8Array()), { clean: false });
+
+      expect((await repository.findAll()).map((card) => card.storeName)).toEqual(['Store', 'Bravo', 'Bakery']);
+    });
+
+    it('exports a Catima file with PNG photos', async () => {
+      photos = new InMemoryPhotoStore({ p1: new Uint8Array([1]), p2: new Uint8Array([2]) });
+      repository = new InMemoryCardRepository(
+        [
+          aCard({
+            id: 'a',
+            storeName: 'Alpha',
+            tagIds: ['t1'],
+            photos: [
+              { id: 'p1', role: 'back' },
+              { id: 'p2', role: 'other' },
+              { id: 'gone', role: 'front' },
+            ],
+          }),
+        ],
+        [{ id: 't1', name: 'Food' }],
+      );
+      service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'x' }, photos, images);
+
+      const file = await service.createBackup('secret', 'catima');
+
+      expect(file.name).toBe('catima_20261114.zip');
+      expect(archive.packed?.password).toBe('secret');
+      expect(archive.packed?.entries.map((entry) => entry.name)).toEqual(['catima.csv', 'card_1_back.png']);
+      expect(images.toPng).toHaveBeenCalledWith(new Uint8Array([1]));
+      const text = new TextDecoder().decode(archive.packed!.entries[0].data);
+      expect(text).toContain('\r\n_id\r\nFood\r\n');
+      expect(text).toContain('cardId,groupId\r\n1,Food\r\n');
+    });
+
+    it('lists the fields a Catima export would lose', async () => {
+      repository = new InMemoryCardRepository([aCard({ homepageUrl: 'https://a.de', showOnLockScreen: true })]);
+      service = new BackupService(repository, archive, { now: () => now }, { newId: () => 'x' }, photos, images);
+
+      expect(await service.catimaLosses()).toEqual(['homepage', 'lockScreen']);
     });
   });
 });

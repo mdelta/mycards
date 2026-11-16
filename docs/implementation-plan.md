@@ -110,7 +110,8 @@ presentation, privacy, data safety, maintainability, offline).
 
 - Clean-room: implemented from real Catima export files only. The observed format is described in
   [formats/catima-export.md](formats/catima-export.md); tests use synthetic fixtures (the sample
-  contains personal data). A second sample covering the "not yet observed" items is needed.
+  contains personal data). [DECIDED] Three samples cover groups, favorites, archived cards, CSV
+  quoting, icon images and passwords. A Catima import always adds new cards (ADR-0004).
 - Domain: `CatimaMapper` (both directions), documented field mapping.
 - Tests: import of sample files, export → re-import, unsupported fields reported.
 

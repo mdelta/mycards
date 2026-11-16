@@ -21,6 +21,10 @@ export interface BackupContent {
   tags: Tag[];
   /** Photo files by photo id, stored as `photos/<id>.jpg` in the archive. */
   photos?: ReadonlyMap<string, Uint8Array>;
+  /** Format of the file read; Catima cards are always added as new cards (ADR-0004). */
+  format?: 'mycards' | 'catima';
+  /** Catima cards imported without barcode type because MyCards cannot show their barcode. */
+  unsupportedBarcodes?: { storeName: string; barcodeType: string }[];
 }
 
 export function photoEntryName(id: string): string {
