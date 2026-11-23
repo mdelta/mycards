@@ -40,6 +40,13 @@ describe('BwipBarcodeRenderer', () => {
     expect(await renderer.toSvg('CODE_39', 'abc')).not.toBe(await renderer.toSvg('CODE_39', 'ABC'));
   });
 
+  it.each(['A'.repeat(500), 'a'.repeat(250), `a${'$'.repeat(249)}`])(
+    'draws the longest valid Code 39 values',
+    async (value) => {
+      expect(await renderer.toSvg('CODE_39', value)).toContain('<svg');
+    },
+  );
+
   it('encodes different values differently', async () => {
     expect(await renderer.toSvg('QR_CODE', 'a')).not.toBe(await renderer.toSvg('QR_CODE', 'b'));
   });

@@ -2,6 +2,7 @@ import type * as BwipJs from 'bwip-js/browser';
 
 import type { BarcodeType } from '../../domain/model/barcode-type';
 import type { BarcodeRenderer } from '../../domain/ports/barcode-renderer';
+import { isStandardCode39 } from '../../domain/services/barcode-value';
 
 /** bwip-js symbology names for the ADR-0017 types. */
 const BCID: Record<BarcodeType, string> = {
@@ -31,7 +32,7 @@ export class BwipBarcodeRenderer implements BarcodeRenderer {
     this.bwip ??= import('bwip-js/browser');
     const { toSVG } = await this.bwip;
     return toSVG({
-      bcid: type === 'CODE_39' && !CODE_39_STANDARD.test(value) ? 'code39ext' : BCID[type],
+      bcid: type === 'CODE_39' && !isStandardCode39(value) ? 'code39ext' : BCID[type],
       ...encode(type, value),
       scale: 3,
       // Quiet zone: about 12 modules for linear codes, 6 for 2D codes (points at scale 1).
@@ -41,13 +42,6 @@ export class BwipBarcodeRenderer implements BarcodeRenderer {
     });
   }
 }
-
-/**
- * Characters of standard Code 39. Other printable ASCII (e.g. lowercase letters) needs *Code 39
- * extended*, which encodes them as two-symbol pairs; standard values are drawn as standard Code 39
- * because extended encoding would turn `$`, `/`, `+` and `%` into such pairs.
- */
-const CODE_39_STANDARD = /^[0-9A-Z \-.$/+%]+$/;
 
 const ECI_TYPES: ReadonlySet<BarcodeType> = new Set(['AZTEC', 'DATA_MATRIX', 'PDF_417', 'QR_CODE']);
 
