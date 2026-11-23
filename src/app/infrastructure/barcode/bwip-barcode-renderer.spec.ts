@@ -8,7 +8,7 @@ import { BwipBarcodeRenderer } from './bwip-barcode-renderer';
 const SAMPLES: Record<BarcodeType, string[]> = {
   AZTEC: ['Müller €'],
   CODABAR: ['A123456B', '1234-5678', 'c40156d'],
-  CODE_39: ['ABC-123'],
+  CODE_39: ['ABC-123', 'A$B/C', 'testnew2'],
   CODE_93: ['abc 123!'],
   CODE_128: ['Hello 123'],
   DATA_MATRIX: ['Müller €'],
@@ -35,6 +35,17 @@ describe('BwipBarcodeRenderer', () => {
       expect(svg).toContain('fill="#FFFFFF"');
     });
   });
+
+  it('draws lowercase Code 39 values as Code 39 extended', async () => {
+    expect(await renderer.toSvg('CODE_39', 'abc')).not.toBe(await renderer.toSvg('CODE_39', 'ABC'));
+  });
+
+  it.each(['A'.repeat(500), 'a'.repeat(250), `a${'$'.repeat(249)}`])(
+    'draws the longest valid Code 39 values',
+    async (value) => {
+      expect(await renderer.toSvg('CODE_39', value)).toContain('<svg');
+    },
+  );
 
   it('encodes different values differently', async () => {
     expect(await renderer.toSvg('QR_CODE', 'a')).not.toBe(await renderer.toSvg('QR_CODE', 'b'));

@@ -1,12 +1,12 @@
 import type { BarcodeType } from '../model/barcode-type';
 import { BARCODE_TYPES } from '../model/barcode-type';
 
-import { barcodeValueOf, isValidBarcodeValue } from './barcode-value';
+import { barcodeValueOf, isStandardCode39, isValidBarcodeValue } from './barcode-value';
 
 const VALID: Record<BarcodeType, string[]> = {
   AZTEC: ['Müller €', 'x'],
   CODABAR: ['A123456B', 'c40156d', '1234-5678'],
-  CODE_39: ['ABC-123', 'A B.$/+%'],
+  CODE_39: ['ABC-123', 'A B.$/+%', 'testnew2', 'a_b!'],
   CODE_93: ['ABC', 'abc 123!'],
   CODE_128: ['Hello 123', '~{}'],
   DATA_MATRIX: ['Müller €'],
@@ -22,7 +22,7 @@ const VALID: Record<BarcodeType, string[]> = {
 const INVALID: Record<BarcodeType, string[]> = {
   AZTEC: [''],
   CODABAR: ['A12', '12E34', 'A12 3B'],
-  CODE_39: ['abc', 'A_B'],
+  CODE_39: ['Müller', 'tab\t'],
   CODE_93: ['Müller', 'tab\t'],
   CODE_128: ['Müller', 'line\n'],
   DATA_MATRIX: [''],
@@ -39,6 +39,24 @@ describe('isValidBarcodeValue', () => {
   describe.each(BARCODE_TYPES)('%s', (type) => {
     it.each(VALID[type])('accepts %j', (value) => expect(isValidBarcodeValue(type, value)).toBe(true));
     it.each(INVALID[type])('rejects %j', (value) => expect(isValidBarcodeValue(type, value)).toBe(false));
+  });
+});
+
+describe('Code 39 length', () => {
+  it.each([
+    ['A'.repeat(500), 'A'.repeat(501)],
+    ['a'.repeat(250), 'a'.repeat(251)],
+    [`a${'$'.repeat(249)}`, `a${'$'.repeat(250)}`],
+  ])('accepts at most 500 encoded symbols', (longest, tooLong) => {
+    expect(isValidBarcodeValue('CODE_39', longest)).toBe(true);
+    expect(isValidBarcodeValue('CODE_39', tooLong)).toBe(false);
+  });
+});
+
+describe('isStandardCode39', () => {
+  it('needs Code 39 extended only for characters outside standard Code 39', () => {
+    expect(isStandardCode39('A B-1.$/+%')).toBe(true);
+    expect(isStandardCode39('testnew2')).toBe(false);
   });
 });
 

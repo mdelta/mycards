@@ -3,13 +3,18 @@ import type { Card } from '../model/card';
 
 const DIGITS = /^\d+$/;
 const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
-const CODE_39 = /^[0-9A-Z \-.$/+%]+$/;
+/** Characters of standard Code 39; extended Code 39 is only needed for other printable ASCII. */
+const CODE_39_STANDARD = /^[0-9A-Z \-.$/+%]+$/;
+/** Characters extended Code 39 keeps as one symbol; it encodes all others as two-symbol pairs. */
+const CODE_39_SINGLE = /[0-9A-Z \-.]/;
+/** Most Code 39 symbols bwip-js draws. */
+const CODE_39_MAX_SYMBOLS = 500;
 const CODABAR = /^([A-D][0-9\-$:/.+]*[A-D]|[0-9\-$:/.+]+)$/i;
 
 const RULES: Record<BarcodeType, (value: string) => boolean> = {
   AZTEC: () => true,
   CODABAR: (v) => CODABAR.test(v),
-  CODE_39: (v) => CODE_39.test(v),
+  CODE_39: (v) => PRINTABLE_ASCII.test(v) && code39Symbols(v) <= CODE_39_MAX_SYMBOLS,
   CODE_93: (v) => PRINTABLE_ASCII.test(v),
   CODE_128: (v) => PRINTABLE_ASCII.test(v),
   DATA_MATRIX: () => true,
@@ -33,6 +38,22 @@ export function barcodeValueOf(card: Pick<Card, 'cardId' | 'barcodeValue'>): str
  */
 export function isValidBarcodeValue(type: BarcodeType, value: string): boolean {
   return value.length > 0 && RULES[type](value);
+}
+
+/**
+ * Whether a Code 39 value is drawn as standard Code 39. Other values (e.g. lowercase letters) need
+ * *Code 39 extended*; standard values stay standard because extended encoding would turn `$`, `/`,
+ * `+` and `%` into two-symbol pairs.
+ */
+export function isStandardCode39(value: string): boolean {
+  return CODE_39_STANDARD.test(value);
+}
+
+function code39Symbols(value: string): number {
+  if (isStandardCode39(value)) {
+    return value.length;
+  }
+  return [...value].reduce((count, char) => count + (CODE_39_SINGLE.test(char) ? 1 : 2), 0);
 }
 
 /** EAN/UPC: `payloadLength` digits, optionally followed by the correct check digit. */
