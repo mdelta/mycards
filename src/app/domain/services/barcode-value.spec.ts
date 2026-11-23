@@ -6,7 +6,7 @@ import { barcodeValueOf, isValidBarcodeValue } from './barcode-value';
 const VALID: Record<BarcodeType, string[]> = {
   AZTEC: ['Müller €', 'x'],
   CODABAR: ['A123456B', 'c40156d', '1234-5678'],
-  CODE_39: ['ABC-123', 'A B.$/+%'],
+  CODE_39: ['ABC-123', 'A B.$/+%', 'testnew2', 'a_b!'],
   CODE_93: ['ABC', 'abc 123!'],
   CODE_128: ['Hello 123', '~{}'],
   DATA_MATRIX: ['Müller €'],
@@ -22,7 +22,7 @@ const VALID: Record<BarcodeType, string[]> = {
 const INVALID: Record<BarcodeType, string[]> = {
   AZTEC: [''],
   CODABAR: ['A12', '12E34', 'A12 3B'],
-  CODE_39: ['abc', 'A_B'],
+  CODE_39: ['Müller', 'tab\t'],
   CODE_93: ['Müller', 'tab\t'],
   CODE_128: ['Müller', 'line\n'],
   DATA_MATRIX: [''],

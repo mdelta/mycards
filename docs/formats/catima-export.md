@@ -67,7 +67,7 @@ Implementation: `src/app/domain/services/catima-format.ts`.
 - Text is trimmed like manual input; `0` balance without `balancetype` means no balance; dates become
   `YYYY-MM-DD`; `headercolor` becomes `#RRGGBB` (alpha dropped); `lastused` `0` means never used.
 - A barcode type MyCards does not support, or a value that does not fit its type (e.g. lowercase
-  letters in `CODE_39`), is imported without barcode type; the app lists these cards afterwards.
+  letters in `CODE_39` are supported via Code 39 extended), is imported without barcode type; the app lists these cards afterwards.
 - Front/back images are shrunk like MyCards photos (≤ 1600 px, JPEG 80 %); the icon image is
   cropped to the centered square (256 px). An image that cannot be decoded is skipped.
 - `barcodeencoding` is ignored (MyCards encodes non-Latin-1 text as UTF-8, ADR-0017).

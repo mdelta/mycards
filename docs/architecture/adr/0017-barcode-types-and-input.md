@@ -21,8 +21,9 @@
 ## Implementation (step 3)
 
 - `BarcodeRenderer` is a domain port; `BwipBarcodeRenderer` (infrastructure) maps each type to its
-  `bwip-js` symbology and renders SVG. Code 93 is drawn as *Code 93 extended* so that all printable
-  ASCII can be encoded; a Codabar value without start/stop characters gets `A…A`.
+  `bwip-js` symbology and renders SVG. Code 93 is drawn as _Code 93 extended_ so that all printable
+  ASCII can be encoded; Code 39 accepts all printable ASCII too and is drawn as _Code 39 extended_
+  only when the value needs it (e.g. lowercase letters), otherwise as standard Code 39; a Codabar value without start/stop characters gets `A…A`.
 - Before saving, the domain checks that the barcode value (or the card ID if no barcode value is set)
   fits the type: allowed characters, length and, for EAN/UPC, the check digit. EAN/UPC values may
   omit the check digit; the renderer adds it. 2D codes accept any non-empty text.

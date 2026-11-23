@@ -3,13 +3,12 @@ import type { Card } from '../model/card';
 
 const DIGITS = /^\d+$/;
 const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
-const CODE_39 = /^[0-9A-Z \-.$/+%]+$/;
 const CODABAR = /^([A-D][0-9\-$:/.+]*[A-D]|[0-9\-$:/.+]+)$/i;
 
 const RULES: Record<BarcodeType, (value: string) => boolean> = {
   AZTEC: () => true,
   CODABAR: (v) => CODABAR.test(v),
-  CODE_39: (v) => CODE_39.test(v),
+  CODE_39: (v) => PRINTABLE_ASCII.test(v),
   CODE_93: (v) => PRINTABLE_ASCII.test(v),
   CODE_128: (v) => PRINTABLE_ASCII.test(v),
   DATA_MATRIX: () => true,
