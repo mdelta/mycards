@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.mikepenz.aboutlibraries.plugin'
 
 android {
     namespace = "de.orisian.apps.mycards"
@@ -43,6 +44,16 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+
+// Licenses of the native libraries, shown on the app's licenses page: `npm run licenses:android`.
+aboutLibraries {
+    export {
+        outputFile = file('../../src/assets/licenses/android-libraries.json')
+        variant = 'release'
+        prettyPrint = true
+        excludeFields.addAll('developers', 'funding', 'scm', 'organization')
+    }
+}
 
 try {
     def servicesJSON = file('google-services.json')

@@ -11,6 +11,9 @@
         <ion-button routerLink="/backup" [attr.aria-label]="t('cardList.backup')">
           <ion-icon slot="icon-only" name="swap-vertical-outline" />
         </ion-button>
+        <ion-button routerLink="/settings" [attr.aria-label]="t('cardList.settings')">
+          <ion-icon slot="icon-only" name="settings-outline" />
+        </ion-button>
       </ion-buttons>
     </ion-toolbar>
     @if (cards().length) {

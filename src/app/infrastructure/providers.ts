@@ -1,16 +1,19 @@
 import { DOCUMENT } from '@angular/common';
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { InjectionToken, inject, makeEnvironmentProviders } from '@angular/core';
+import { App } from '@capacitor/app';
 import { AppLauncher } from '@capacitor/app-launcher';
 import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem } from '@capacitor/filesystem';
+import { Preferences } from '@capacitor/preferences';
 import { Share } from '@capacitor/share';
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { ScreenBrightness } from '@capacitor-community/screen-brightness';
 import { BarcodeScanner as MlKitPlugin } from '@capacitor-mlkit/barcode-scanning';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 
+import type { AppInfo } from '../domain/ports/app-info';
 import type { BackupFiles } from '../domain/ports/backup-files';
 import type { BarcodeRenderer } from '../domain/ports/barcode-renderer';
 import type { BarcodeScanner } from '../domain/ports/barcode-scanner';
@@ -18,6 +21,7 @@ import type { CardRepository } from '../domain/ports/card-repository';
 import type { ExternalLauncher } from '../domain/ports/external-launcher';
 import type { PhotoStore } from '../domain/ports/photo-store';
 import type { PresentationMode } from '../domain/ports/presentation-mode';
+import type { SettingsStore } from '../domain/ports/settings-store';
 import { BackupService } from '../domain/services/backup-service';
 import { CardService } from '../domain/services/card-service';
 import { PhotoService } from '../domain/services/photo-service';
@@ -33,11 +37,13 @@ import { CapacitorExternalLauncher } from './links/capacitor-external-launcher';
 import { CanvasImageProcessor } from './photos/canvas-image-processor';
 import { CapacitorPhotoSource } from './photos/capacitor-photo-source';
 import { FilesystemPhotoStore } from './photos/filesystem-photo-store';
+import { PreferencesSettingsStore } from './settings/preferences-settings-store';
 import { CapacitorSqlDatabase } from './sqlite/capacitor-sql-database';
 import { migrate } from './sqlite/migrations';
 import { openConnection } from './sqlite/open-connection';
 import type { SqlDatabase } from './sqlite/sql-database';
 import { SqliteCardRepository } from './sqlite/sqlite-card-repository';
+import { CapacitorAppInfo } from './system/capacitor-app-info';
 import { SystemClock } from './system/system-clock';
 import { UuidGenerator } from './system/uuid-generator';
 
@@ -60,6 +66,17 @@ export const EXTERNAL_LAUNCHER = new InjectionToken<ExternalLauncher>('ExternalL
 export const PHOTO_STORE = new InjectionToken<PhotoStore>('PhotoStore', {
   providedIn: 'root',
   factory: () => new FilesystemPhotoStore(Filesystem),
+});
+
+/** App settings such as the theme (R-4, ADR-0019). */
+export const SETTINGS_STORE = new InjectionToken<SettingsStore>('SettingsStore', {
+  providedIn: 'root',
+  factory: () => new PreferencesSettingsStore(Preferences),
+});
+
+export const APP_INFO = new InjectionToken<AppInfo>('AppInfo', {
+  providedIn: 'root',
+  factory: () => new CapacitorAppInfo(App, Capacitor.isNativePlatform()),
 });
 
 /** Wires the domain services to the platform adapters (composition root, arc42 5.2). */
