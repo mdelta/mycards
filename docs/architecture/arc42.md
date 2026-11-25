@@ -297,7 +297,7 @@ In the browser the scan action is hidden; manual entry (F-10) is always availabl
 
 ## 8. Cross-cutting Concepts (to be filled)
 
-- Privacy & permissions: no camera permission (Google scanner UI, ADR-0010); no location permission (ADR-0005); internet kept (ADR-0015); no app lock and no biometric permissions (ADR-0013); Google ML Kit usage metrics disclosed in privacy policy / Data-safety form (ADR-0010); opt-in Sentry crash reports and usage data, each sent report visible in the app (ADR-0018)
+- Privacy & permissions: no camera permission (Google scanner UI, ADR-0010); no location permission (ADR-0005); internet kept (ADR-0015); no app lock and no biometric permissions (ADR-0013); Google ML Kit usage metrics disclosed in privacy policy / Data-safety form (ADR-0010); opt-in Sentry crash reports and usage data, each sent report visible in the app (ADR-0018); privacy policy in `docs/privacy.md`, shown in the app and on GitHub Pages (ADR-0019)
 - Data model versioning & migrations, export format versioning
 - Error handling, logging (no remote telemetry?)
 - Internationalization: English only at first, all UI texts externalized for later translation (ADR-0012)
@@ -331,6 +331,7 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 | [0016](adr/0016-card-data-model.md) | Card data model (Catima fields + tags, icon, color, homepage) | accepted |
 | [0017](adr/0017-barcode-types-and-input.md) | All barcode types; camera-only scanning | accepted |
 | [0018](adr/0018-opt-in-crash-reports-and-usage-data.md) | Opt-in crash reports and usage data via Sentry | accepted |
+| [0019](adr/0019-settings-privacy-policy-and-licenses.md) | Settings, privacy policy and licenses | accepted |
 
 ---
 

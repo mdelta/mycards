@@ -1,0 +1,6 @@
+# GitHub Pages (Jekyll) publishes only the privacy policy from this folder (ADR-0019).
+title: MyCards
+exclude:
+  - architecture
+  - formats
+  - implementation-plan.md

@@ -1,0 +1,54 @@
+<ng-container *transloco="let t; prefix: 'licenses'">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/settings" />
+      </ion-buttons>
+      <ion-title>{{ t('title') }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content>
+    <ion-list>
+      <ion-list-header>{{ t('app') }}</ion-list-header>
+      <ion-item [button]="true" (click)="open(appLicenseUrl)">
+        <ion-label>
+          MyCards
+          <p>{{ t('appLicense') }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <ng-template #libraries let-list let-section="section">
+      <ion-list-header>{{ t(section) }}</ion-list-header>
+      @if (list === null) {
+      <ion-item lines="none"><ion-note>{{ t('notInBuild') }}</ion-note></ion-item>
+      } @else if (list) {
+      <ion-accordion-group [attr.data-testid]="section">
+        @for (library of list; track library.name) {
+        <ion-accordion [value]="library.name">
+          <ion-item slot="header">
+            <ion-label class="ion-text-wrap">
+              {{ library.name }}
+              <p>{{ library.version ? library.version + ' · ' : '' }}{{ library.license }}</p>
+            </ion-label>
+          </ion-item>
+          <div slot="content" class="ion-padding">
+            @for (url of library.urls; track url) {
+            <ion-button fill="clear" (click)="open(url)">{{ t('openLicense') }}</ion-button>
+            } @if (library.text) {
+            <pre>{{ library.text }}</pre>
+            } @else if (!library.urls) {
+            <ion-note>{{ t('noText') }}</ion-note>
+            }
+          </div>
+        </ion-accordion>
+        }
+      </ion-accordion-group>
+      }
+    </ng-template>
+
+    <ng-container *ngTemplateOutlet="libraries; context: { $implicit: android(), section: 'android' }" />
+    <ng-container *ngTemplateOutlet="libraries; context: { $implicit: web(), section: 'web' }" />
+  </ion-content>
+</ng-container>

@@ -13,7 +13,8 @@
     "scannerNotReady": "The scanner is being downloaded. Try again in a moment.",
     "scanFailed": "Scanning failed. Try again or add the card manually.",
     "backup": "Export and import",
-    "tagFilter": "Filter by tag"
+    "tagFilter": "Filter by tag",
+    "settings": "Settings"
   },
   "cardEditor": {
     "newTitle": "New card",
@@ -195,5 +196,37 @@
       "newerVersion": "This file was created by a newer version of MyCards. Update the app and try again.",
       "importFailed": "Import failed. Your cards were not changed."
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": {
+      "header": "Theme",
+      "system": "System default",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "about": {
+      "header": "About",
+      "privacy": "Privacy policy",
+      "sourceCode": "Source code",
+      "sourceCodeHint": "MyCards is free software (GPL-3.0). Opens GitHub.",
+      "licenses": "Licenses",
+      "version": "Version",
+      "versionBrowser": "Browser version"
+    }
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "loadFailed": "The privacy policy could not be loaded."
+  },
+  "licenses": {
+    "title": "Licenses",
+    "app": "App",
+    "appLicense": "GNU General Public License v3.0 or later",
+    "android": "Android libraries",
+    "web": "JavaScript libraries",
+    "notInBuild": "Not included in this build.",
+    "openLicense": "Open license",
+    "noText": "No license text available."
   }
 }

@@ -22,6 +22,18 @@ export const routes: Routes = [
     loadComponent: () => import('./ui/pages/backup/backup.page').then((m) => m.BackupPage),
   },
   {
+    path: 'settings',
+    loadComponent: () => import('./ui/pages/settings/settings.page').then((m) => m.SettingsPage),
+  },
+  {
+    path: 'settings/privacy',
+    loadComponent: () => import('./ui/pages/privacy/privacy.page').then((m) => m.PrivacyPage),
+  },
+  {
+    path: 'settings/licenses',
+    loadComponent: () => import('./ui/pages/licenses/licenses.page').then((m) => m.LicensesPage),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

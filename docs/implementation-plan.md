@@ -139,6 +139,9 @@ Requested by the product owner and clarified before the release step.
 
 - Settings page with theme, privacy notes, source code link, licenses and app version.
 - Privacy policy text in the app and on a public page.
+- [DECIDED] Details in ADR-0019: settings in `@capacitor/preferences` and not exported; version via
+  `@capacitor/app`; native licenses via the AboutLibraries Gradle plugin, shown with the JavaScript
+  licenses on one screen; `docs/privacy.md` on GitHub Pages; contact privacy-policy@orisian.de.
 
 ### Step R-B – Opt-in crash reports and usage data (R-1, R-3; ADR-0018)
 

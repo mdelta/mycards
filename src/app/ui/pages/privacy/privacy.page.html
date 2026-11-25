@@ -1,0 +1,36 @@
+<ng-container *transloco="let t; prefix: 'privacy'">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/settings" />
+      </ion-buttons>
+      <ion-title>{{ t('title') }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content class="ion-padding">
+    <ng-template #spans let-spans>
+      @for (span of spans; track $index) { @if (span.kind === 'link') {
+      <a href="#" (click)="$event.preventDefault(); open(span.url)">{{ span.text }}</a>
+      } @else {{{ span.text }}} }
+    </ng-template>
+
+    @if (failed()) {
+    <ion-text color="danger"><p>{{ t('loadFailed') }}</p></ion-text>
+    } @for (block of blocks(); track $index) { @switch (block.kind) { @case ('heading') { @if (block.level === 1) {
+    <h1><ng-container *ngTemplateOutlet="spans; context: { $implicit: block.spans }" /></h1>
+    } @else if (block.level === 2) {
+    <h2><ng-container *ngTemplateOutlet="spans; context: { $implicit: block.spans }" /></h2>
+    } @else {
+    <h3><ng-container *ngTemplateOutlet="spans; context: { $implicit: block.spans }" /></h3>
+    } } @case ('list') {
+    <ul>
+      @for (item of block.items; track $index) {
+      <li><ng-container *ngTemplateOutlet="spans; context: { $implicit: item }" /></li>
+      }
+    </ul>
+    } @default {
+    <p><ng-container *ngTemplateOutlet="spans; context: { $implicit: block.spans }" /></p>
+    } } }
+  </ion-content>
+</ng-container>

@@ -22,7 +22,7 @@ import {
 } from '@ionic/angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { addIcons } from 'ionicons';
-import { add, scanOutline, star, swapVerticalOutline } from 'ionicons/icons';
+import { add, scanOutline, settingsOutline, star, swapVerticalOutline } from 'ionicons/icons';
 
 import type { Card, Tag } from '../../../domain/model/card';
 import { photoOf } from '../../../domain/model/photo';
@@ -77,7 +77,7 @@ export class HomePage implements ViewWillEnter {
   readonly visibleCards = computed(() => filterCards(this.cards(), this.query(), this.selectedTag()));
 
   constructor() {
-    addIcons({ add, scanOutline, star, swapVerticalOutline });
+    addIcons({ add, scanOutline, settingsOutline, star, swapVerticalOutline });
   }
 
   async ionViewWillEnter(): Promise<void> {
