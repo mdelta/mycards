@@ -122,25 +122,40 @@ presentation, privacy, data safety, maintainability, offline).
   pre-rendered barcode images of cards marked `showOnLockScreen`, favorites first, swipe between them.
 - TypeScript side: render images on change, sync to the plugin; images excluded from Auto Backup.
 
-### Before step 10 – New features to clarify
+### Before step 10 – New features (clarified)
 
-Requested by the product owner. Each item still has to be clarified; afterwards this plan, the
-ADRs and arc42 get updated, and the items get their own steps, before step 10 starts.
+Requested by the product owner and clarified before the release step.
 
-| #   | Feature                    | Request                                                                                                                                                                                        | Open points **[DECIDE]**                                                                                                                                       |
-| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R-1 | Opt-in usage data (Sentry) | Share logs, errors and usage data (e.g. used barcode types, number of cards) with Sentry to improve the app. Turning it on must tell the user what is sent; ideally the user can see the data. | Exact data list; hosting (sentry.io or self-hosted) and region; how the user sees the data; effect on privacy goal #2, ADR-0015 and the Play data safety form. |
-| R-2 | "Buy me a coffee"          | Let users support the development.                                                                                                                                                             | Provider (e.g. external link or Google Play Billing); check which option Google Play's payments policy allows.                                                 |
-| R-3 | Opt-in crash reports       | Users can opt in to sending crash reports.                                                                                                                                                     | Same tool as R-1 or separate; separate switch from R-1; native (Android) crashes as well as TypeScript errors.                                                 |
-| R-4 | Settings page              | App settings such as color theme (light, dark, system), privacy notes, link to the source code, the usage-data switches (R-1, R-3) and more.                                                   | Full list of settings; where the privacy notes live (in the app, website or both).                                                                             |
-| R-5 | App logo                   | Design a logo for the app.                                                                                                                                                                     | Style and colors; who designs it; adaptive icon and Play store sizes.                                                                                          |
-| R-6 | Play store text            | Draft the store listing text.                                                                                                                                                                  | Tone; short and full description; English only at first (ADR-0012).                                                                                            |
+| #   | Feature                    | Decision                                                                                                                                                                                                                                                   |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R-1 | Opt-in usage data (Sentry) | [DECIDED] ADR-0018: Sentry on sentry.io, EU region; own switch, off by default; weekly summary of counts (cards, barcode types, tags, photos, used features), no card content; sent reports visible in the app.                                            |
+| R-2 | "Buy me a coffee"          | [DEFERRED] Skipped for now (PO). Google Play's payments policy requires Play Billing for payments in the app and forbids in-app links to other payment methods, except tax-exempt donations.                                                               |
+| R-3 | Opt-in crash reports       | [DECIDED] ADR-0018: same Sentry setup as R-1, separate switch, off by default; TypeScript errors and native crashes.                                                                                                                                       |
+| R-4 | Settings page              | [DECIDED] Theme (system, light, dark), the two switches and "Sent data" (R-1, R-3), privacy notes, source code link, licenses incl. third-party licenses, app version. Privacy policy also on a public page (GitHub Pages), as Google Play requires a URL. |
+| R-5 | App logo                   | [DECIDED] Devin drafts three SVG concepts; the PO picks one; then adaptive icon (incl. monochrome layer), legacy launcher icons, 512 px Play icon and feature graphic.                                                                                     |
+| R-6 | Play store text            | [DECIDED] English, factual and friendly; short (≤ 80 characters) and full description (≤ 4000 characters); drafted after R-1 to R-5 are built so it matches the app.                                                                                       |
+
+### Step R-A – Settings page and privacy notes (R-4)
+
+- Settings page with theme, privacy notes, source code link, licenses and app version.
+- Privacy policy text in the app and on a public page.
+
+### Step R-B – Opt-in crash reports and usage data (R-1, R-3; ADR-0018)
+
+- `@sentry/capacitor` + `@sentry/angular`, started only when a switch is on.
+- Consent dialogs listing the sent data, weekly usage summary, local "Sent data" log, scrubbing
+  tests that prove no card content is sent.
+
+### Step R-C – Logo and store listing (R-5, R-6)
+
+- Logo concepts → chosen logo → all Android and Play sizes.
+- Store listing draft for step 10.
 
 ### Step 10 – Release (N-01; ADR-0008)
 
 - Answer Q-14 (tooling, tracks, trigger), signing with the upload key from GitHub Secrets,
   AAB build, Play upload, store listing, data safety form, privacy policy (both must declare
-  Google ML Kit's usage metrics, ADR-0010).
+  Google ML Kit's usage metrics, ADR-0010, and the opt-in Sentry reports, ADR-0018).
 - Needs the Google Play developer account.
 
 ### Step 11 – Polish

@@ -15,7 +15,7 @@ An initial idea exists to download card presets (e.g. store names, logos) from a
 
 ## Consequences
 
-- No network calls are made by our own code; the only network use is Google ML Kit's usage
-  metrics (ADR-0010). Any future network use (e.g. presets backend)
-  requires its own ADR and must not upload user data.
+- Network use: Google ML Kit's usage metrics (ADR-0010) and, only after the user opts in, crash
+  reports and usage data sent to Sentry (ADR-0018). Any future network use (e.g. presets backend)
+  requires its own ADR and must not upload card data.
 - The privacy policy / Data-safety form must reflect actual network use.
