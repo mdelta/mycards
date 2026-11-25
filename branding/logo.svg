@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <defs>
+    <linearGradient id="mycards-bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#mycards-bg)"/>
+  <g transform="translate(54 54) scale(0.86) translate(-55 -52)">
+    <path transform="rotate(-10 56 46)" fill="#99F6E4" d="M36,30 h40 a5,5 0 0 1 5,5 v22 a5,5 0 0 1 -5,5 h-40 a5,5 0 0 1 -5,-5 v-22 a5,5 0 0 1 5,-5 z"/>
+    <g transform="rotate(4 54 56)">
+      <path fill="#FFFFFF" d="M33,38 h42 a5,5 0 0 1 5,5 v24 a5,5 0 0 1 -5,5 h-42 a5,5 0 0 1 -5,-5 v-24 a5,5 0 0 1 5,-5 z"/>
+      <path fill="#5EEAD4" d="M35.5,43 h9.0 a1.5,1.5 0 0 1 1.5,1.5 v0.0 a1.5,1.5 0 0 1 -1.5,1.5 h-9.0 a1.5,1.5 0 0 1 -1.5,-1.5 v-0.0 a1.5,1.5 0 0 1 1.5,-1.5 z"/>
+      <path fill="#0F766E" d="M34,50 h2 v16 h-2 z M37.5,50 h1 v16 h-1 z M40,50 h3 v16 h-3 z M44.5,50 h1 v16 h-1 z M47,50 h2 v16 h-2 z M50.5,50 h1 v16 h-1 z M52.5,50 h3 v16 h-3 z M57,50 h1 v16 h-1 z M59,50 h2 v16 h-2 z M62.5,50 h1 v16 h-1 z M64.5,50 h3 v16 h-3 z M69,50 h1 v16 h-1 z M71,50 h2 v16 h-2 z"/>
+    </g>
+  </g>
+</svg>
