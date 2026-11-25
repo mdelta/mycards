@@ -79,6 +79,12 @@ export const APP_INFO = new InjectionToken<AppInfo>('AppInfo', {
   factory: () => new CapacitorAppInfo(App, Capacitor.isNativePlatform()),
 });
 
+/** Closes the app; Ionic's Back handling replaces Android's default once `@capacitor/app` is installed. */
+export const EXIT_APP = new InjectionToken<() => Promise<void>>('ExitApp', {
+  providedIn: 'root',
+  factory: () => () => App.exitApp(),
+});
+
 /** Wires the domain services to the platform adapters (composition root, arc42 5.2). */
 export function provideCardStorage(): EnvironmentProviders {
   return makeEnvironmentProviders([

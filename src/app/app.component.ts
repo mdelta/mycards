@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
-import { IonApp, IonRouterOutlet } from '@ionic/angular';
+import { Component, inject, viewChild } from '@angular/core';
+import { IonApp, IonRouterOutlet, Platform } from '@ionic/angular';
 
+import { EXIT_APP } from './infrastructure/providers';
 import { ThemeService } from './ui/theme.service';
 
 @Component({
@@ -9,7 +10,16 @@ import { ThemeService } from './ui/theme.service';
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent {
+  private readonly outlet = viewChild.required(IonRouterOutlet);
+
   constructor() {
     void inject(ThemeService).init();
+    const exitApp = inject(EXIT_APP);
+    // Lowest priority: runs only when no page, overlay or menu handled Back.
+    inject(Platform).backButton.subscribeWithPriority(-1, () => {
+      if (!this.outlet().canGoBack()) {
+        void exitApp();
+      }
+    });
   }
 }
