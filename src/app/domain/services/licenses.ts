@@ -5,8 +5,8 @@ export interface LibraryLicense {
   license: string;
   /** Full license text, where the build provides it. */
   text?: string;
-  /** Link to the license, where no text is available. */
-  url?: string;
+  /** Links to the licenses whose text the build doesn't include. */
+  urls?: string[];
 }
 
 const SEPARATOR = /^-{20,}$/m;
@@ -42,12 +42,13 @@ export function parseAndroidLicenses(data: AboutLibrariesExport): LibraryLicense
     .map((library) => {
       const licenses = (library.licenses ?? []).map((key) => data.licenses[key]).filter((l) => !!l);
       const texts = licenses.map((l) => l.content?.trim()).filter((t): t is string => !!t);
-      const url = licenses.find((l) => l.url)?.url;
+      const urls = licenses.filter((l) => !l.content?.trim() && l.url).map((l) => l.url!);
       return {
         name: library.uniqueId,
         ...(library.artifactVersion ? { version: library.artifactVersion } : {}),
         license: licenses.map((l) => l.spdxId || l.name || l.url).join(', ') || 'Unknown',
-        ...(texts.length ? { text: texts.join('\n\n') } : url ? { url } : {}),
+        ...(texts.length ? { text: texts.join('\n\n') } : {}),
+        ...(urls.length ? { urls } : {}),
       };
     })
     .sort(byName);

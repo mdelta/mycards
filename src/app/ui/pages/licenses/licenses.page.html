@@ -34,11 +34,11 @@
             </ion-label>
           </ion-item>
           <div slot="content" class="ion-padding">
-            @if (library.text) {
+            @for (url of library.urls; track url) {
+            <ion-button fill="clear" (click)="open(url)">{{ t('openLicense') }}</ion-button>
+            } @if (library.text) {
             <pre>{{ library.text }}</pre>
-            } @else if (library.url) {
-            <ion-button fill="clear" (click)="open(library.url)">{{ t('openLicense') }}</ion-button>
-            } @else {
+            } @else if (!library.urls) {
             <ion-note>{{ t('noText') }}</ion-note>
             }
           </div>

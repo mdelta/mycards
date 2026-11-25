@@ -40,6 +40,7 @@ describe('parseAndroidLicenses', () => {
       libraries: [
         { uniqueId: 'com.google.mlkit:barcode-scanning', artifactVersion: '17.3.0', licenses: ['mlkit'] },
         { uniqueId: 'androidx.core:core', artifactVersion: '1.17.0', licenses: ['Apache-2.0'] },
+        { uniqueId: 'androidx.camera:camera-core', licenses: ['Apache-2.0', 'bsd'] },
         { uniqueId: 'org.example:unlicensed' },
         { uniqueId: 'org.example:no-url', licenses: ['custom'] },
       ],
@@ -47,16 +48,23 @@ describe('parseAndroidLicenses', () => {
         'Apache-2.0': { name: 'Apache License 2.0', spdxId: 'Apache-2.0', content: ' Apache text ' },
         mlkit: { name: 'ML Kit Terms of Service', url: 'https://developers.google.com/ml-kit/terms' },
         custom: { name: 'Custom' },
+        bsd: { name: 'BSD License', url: 'https://example.org/bsd' },
       },
     });
 
     expect(licenses).toEqual([
+      {
+        name: 'androidx.camera:camera-core',
+        license: 'Apache-2.0, BSD License',
+        text: 'Apache text',
+        urls: ['https://example.org/bsd'],
+      },
       { name: 'androidx.core:core', version: '1.17.0', license: 'Apache-2.0', text: 'Apache text' },
       {
         name: 'com.google.mlkit:barcode-scanning',
         version: '17.3.0',
         license: 'ML Kit Terms of Service',
-        url: 'https://developers.google.com/ml-kit/terms',
+        urls: ['https://developers.google.com/ml-kit/terms'],
       },
       { name: 'org.example:no-url', license: 'Custom' },
       { name: 'org.example:unlicensed', license: 'Unknown' },
