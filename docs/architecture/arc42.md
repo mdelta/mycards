@@ -39,7 +39,7 @@ Remaining scope questions: see section 11.2.
 | Priority | Quality goal   | Motivation                                                                 |
 |----------|----------------|----------------------------------------------------------------------------|
 | 1 | Speed of presentation  | At the checkout the card must be on screen within a few seconds            |
-| 2 | Privacy                | No own backend; card data leaves the device only via user export or Android Auto Backup (ADR-0014). Google ML Kit sends usage metrics without card data (ADR-0010) |
+| 2 | Privacy                | No own backend; card data leaves the device only via user export or Android Auto Backup (ADR-0014). Google ML Kit sends usage metrics without card data (ADR-0010); opt-in crash reports and usage data via Sentry, without card data (ADR-0018) |
 | 3 | Data safety            | No loss of cards (app update, phone change) – via import/export            |
 | 4 | Maintainability        | Single developer, TypeScript-centric code base                             |
 | 5 | Offline capability     | Core features (show/scan card) work without network                        |
@@ -65,7 +65,7 @@ Remaining scope questions: see section 11.2.
 | Distribution: Google Play Store (AAB, Play App Signing, target-API requirement, Data-safety form, privacy policy URL) | Request / Google policy – current values to be verified at release time |
 | Language: TypeScript; Kotlin only where unavoidable (lock-screen plugin) | [DECIDED] ADR-0001 |
 | Framework: Capacitor + Angular, Ionic UI components  | [DECIDED] ADR-0001, ADR-0002, ADR-0009 |
-| No own backend / cloud storage of user data. Exceptions accepted by PO: Android Auto Backup to the user's Google account stays enabled; Google ML Kit usage metrics (no card data, ADR-0010) | Request (F-04), ADR-0014 |
+| No own backend / cloud storage of user data. Exceptions accepted by PO: Android Auto Backup to the user's Google account stays enabled; Google ML Kit usage metrics (no card data, ADR-0010); opt-in crash reports and usage data via Sentry, EU region (no card data, ADR-0018) | Request (F-04), ADR-0014 |
 | License: GPL-3.0-or-later                            | [DECIDED] ADR-0007 |
 | Clean-room: **no code is copied from Catima** (or other card apps). Only Catima's export file format is implemented for compatibility. | [DECIDED] ADR-0007 |
 | Documentation in Markdown, kept in this repository   | [DECIDED] PO, 2026-11-08 |
@@ -99,7 +99,8 @@ flowchart LR
 | Location service      | Not used by the app (map app determines location)                  | [DECIDED] ADR-0005 |
 | Lock screen           | Quick-Settings tile → native Activity shown over the lock screen     | [DECIDED] ADR-0006 |
 | Google Play           | Play Developer API, used by GitHub Actions for uploads              | [DECIDED] ADR-0008 |
-| Internet              | Permission kept; not used by current features. Possible future: download card presets from a backend (idea only) | [DECIDED] ADR-0015 |
+| Internet              | Permission kept; used by ML Kit metrics and opt-in Sentry reports. Possible future: download card presets from a backend (idea only) | [DECIDED] ADR-0015 |
+| Sentry (sentry.io, EU) | Opt-in crash reports and usage data, two separate switches, off by default | [DECIDED] ADR-0018 |
 
 ---
 
@@ -296,7 +297,7 @@ In the browser the scan action is hidden; manual entry (F-10) is always availabl
 
 ## 8. Cross-cutting Concepts (to be filled)
 
-- Privacy & permissions: no camera permission (Google scanner UI, ADR-0010); no location permission (ADR-0005); internet kept (ADR-0015); no app lock and no biometric permissions (ADR-0013); Google ML Kit usage metrics disclosed in privacy policy / Data-safety form (ADR-0010)
+- Privacy & permissions: no camera permission (Google scanner UI, ADR-0010); no location permission (ADR-0005); internet kept (ADR-0015); no app lock and no biometric permissions (ADR-0013); Google ML Kit usage metrics disclosed in privacy policy / Data-safety form (ADR-0010); opt-in Sentry crash reports and usage data, each sent report visible in the app (ADR-0018)
 - Data model versioning & migrations, export format versioning
 - Error handling, logging (no remote telemetry?)
 - Internationalization: English only at first, all UI texts externalized for later translation (ADR-0012)
@@ -329,6 +330,7 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 | [0015](adr/0015-keep-internet-permission.md) | Keep INTERNET permission | accepted |
 | [0016](adr/0016-card-data-model.md) | Card data model (Catima fields + tags, icon, color, homepage) | accepted |
 | [0017](adr/0017-barcode-types-and-input.md) | All barcode types; camera-only scanning | accepted |
+| [0018](adr/0018-opt-in-crash-reports-and-usage-data.md) | Opt-in crash reports and usage data via Sentry | accepted |
 
 ---
 
@@ -354,6 +356,7 @@ Scenarios derived from the prioritized quality goals in section 1.2.
 | Lock-screen feature needs native Kotlin and may behave differently across vendors / Android versions | Keep it optional, isolate in a small plugin, prototype (spike) early on real devices |
 | Lock-screen screen could expose more than intended (e.g. whole app reachable without unlock) | Separate minimal Activity that only shows barcodes (ADR-0006) |
 | Catima format changes or is under-specified | Version detection, tests with real Catima exports, compatibility mode documented separately |
+| Opt-in Sentry reports could accidentally contain card data (e.g. in an error message or breadcrumb) | Allow-list of sent fields, `beforeSend` scrubbing, no default PII, tests; user can review every sent report (ADR-0018) |
 | Accidental GPL/copyright issues from copying Catima code | Clean-room rule (ADR-0007), PR review |
 | ML Kit barcode scanning depends on Google Play services; the scanner module may need a download on first use | Decided: Play-services scanner UI, no bundled model (ADR-0010); "try again" message while downloading; manual entry as fallback |
 | Data loss on uninstall (local only) | Prominent export, reminders? |
