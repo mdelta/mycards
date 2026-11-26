@@ -8,6 +8,8 @@ import { SentryReportSender, USAGE_MESSAGE } from './sentry-report-sender';
 describe('SentryReportSender', () => {
   let options: BrowserOptions;
   let sdk: { [K in keyof SentrySdk]: ReturnType<typeof vi.fn> };
+  let status: number | undefined;
+  const innerSend = vi.fn(async () => ({ statusCode: status }));
   let hooks: ReportHooks & { prepare: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
   const device = {
     getInfo: vi.fn(async () => ({
@@ -29,6 +31,11 @@ describe('SentryReportSender', () => {
     );
   }
 
+  const send = (eventId: string | undefined): Promise<unknown> => {
+    const transport = (options.transport as unknown as (o: object) => { send: (e: unknown) => Promise<unknown> })({});
+    return transport.send([{ event_id: eventId }, []]);
+  };
+
   const beforeSend = (event: ErrorEvent): Promise<ErrorEvent | null> =>
     (options.beforeSend as (e: ErrorEvent, h: object) => Promise<ErrorEvent | null>)(event, {});
 
@@ -46,9 +53,10 @@ describe('SentryReportSender', () => {
       globalHandlersIntegration: integration('GlobalHandlers'),
       linkedErrorsIntegration: integration('LinkedErrors'),
       dedupeIntegration: integration('Dedupe'),
-      makeFetchTransport: vi.fn(),
-      makeBrowserOfflineTransport: vi.fn(() => 'offline-transport'),
+      makeFetchTransport: vi.fn(() => ({ send: innerSend, flush: vi.fn() })),
     };
+    status = 200;
+    innerSend.mockClear();
     hooks = {
       prepare: vi.fn(async ({ messages }: { messages: string[] }) => messages.map((m) => `scrubbed ${m}`)),
       record: vi.fn(async () => undefined),
@@ -71,8 +79,8 @@ describe('SentryReportSender', () => {
       sendClientReports: false,
       defaultIntegrations: false,
       maxBreadcrumbs: 0,
-      transport: 'offline-transport',
     });
+    expect(options).not.toHaveProperty('transportOptions');
     expect((options.integrations as { name: string }[]).map((i) => i.name)).toEqual([
       'EventFilters',
       'BrowserApiErrors',
@@ -155,8 +163,31 @@ describe('SentryReportSender', () => {
         ],
       },
     });
+    expect(hooks.record).not.toHaveBeenCalled();
+
+    await send('e1');
     expect(hooks.record).toHaveBeenCalledWith('crash', sent);
+    expect(innerSend).toHaveBeenCalled();
     expect(JSON.stringify(sent)).not.toContain("Alice's phone");
+  });
+
+  it('lists only events Sentry accepted under "Sent data"', async () => {
+    await sender().start(hooks);
+    await beforeSend({ type: undefined, event_id: 'offline' });
+    await beforeSend({ type: undefined, event_id: 'limited' });
+    await beforeSend({ type: undefined, event_id: 'ok' });
+
+    innerSend.mockRejectedValueOnce(new Error('offline'));
+    await expect(send('offline')).rejects.toThrow('offline');
+    status = undefined;
+    await send('limited');
+    status = 200;
+    await send('ok');
+    await send('ok');
+    await send(undefined);
+
+    expect(hooks.record).toHaveBeenCalledTimes(1);
+    expect(hooks.record.mock.calls[0][1]).toMatchObject({ event_id: 'ok' });
   });
 
   it('drops events the domain rejects', async () => {

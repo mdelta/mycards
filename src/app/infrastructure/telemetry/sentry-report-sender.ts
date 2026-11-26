@@ -17,8 +17,10 @@ export type SentrySdk = Pick<
   | 'linkedErrorsIntegration'
   | 'dedupeIntegration'
   | 'makeFetchTransport'
-  | 'makeBrowserOfflineTransport'
 >;
+
+type Transport = ReturnType<SentrySdk['makeFetchTransport']>;
+type Envelope = Parameters<Transport['send']>[0];
 
 export const USAGE_MESSAGE = 'Usage summary';
 
@@ -26,10 +28,13 @@ export const USAGE_MESSAGE = 'Usage summary';
  * Sends reports with the Sentry browser SDK (ADR-0018). Only errors of the app's own code are
  * captured; no breadcrumbs, tracing, sessions, client reports or user data. Every event is reduced
  * to an allow-list of fields and its messages are scrubbed by the domain before it leaves the app.
+ * There is no offline queue: a report that can't be delivered is dropped, so nothing is sent after
+ * the user turns a switch off, and "Sent data" lists only reports Sentry accepted.
  */
 export class SentryReportSender implements ReportSender {
   private sdk?: SentrySdk;
   private contexts: Contexts = {};
+  private readonly pending = new Map<string, { kind: ReportKind; event: ErrorEvent }>();
 
   constructor(
     private readonly dsn: string,
@@ -81,7 +86,7 @@ export class SentryReportSender implements ReportSender {
       maxBreadcrumbs: 0,
       beforeBreadcrumb: () => null,
       beforeSend: (event) => this.beforeSend(event, hooks),
-      transport: sdk.makeBrowserOfflineTransport(sdk.makeFetchTransport),
+      transport: (options) => this.recordingTransport(sdk.makeFetchTransport(options), hooks),
     });
     this.sdk = sdk;
   }
@@ -128,8 +133,31 @@ export class SentryReportSender implements ReportSender {
         : { exception: { values: exceptions.map((e, i) => allowedException(e, messages[i])) } }),
     };
     const sent = JSON.parse(JSON.stringify(allowed)) as ErrorEvent;
-    await hooks.record(kind, sent);
+    if (sent.event_id) {
+      this.pending.set(sent.event_id, { kind, event: sent });
+    }
     return sent;
+  }
+
+  /** Records each event under "Sent data" once Sentry has accepted it. */
+  private recordingTransport(transport: Transport, hooks: ReportHooks): Transport {
+    return {
+      ...transport,
+      send: async (envelope: Envelope) => {
+        const header = envelope[0] as { event_id?: unknown };
+        const id = typeof header.event_id === 'string' ? header.event_id : undefined;
+        const report = id ? this.pending.get(id) : undefined;
+        if (id) {
+          this.pending.delete(id);
+        }
+        const response = await transport.send(envelope);
+        const status = response.statusCode ?? 0;
+        if (report && status >= 200 && status < 300) {
+          await hooks.record(report.kind, report.event);
+        }
+        return response;
+      },
+    };
   }
 }
 
