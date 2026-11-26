@@ -24,9 +24,9 @@
     "test:coverage": "ng test --no-watch --coverage",
     "test:unit:watch": "ng test --watch",
     "test:e2e": "playwright test",
-    "licenses:android": "cd android && ./gradlew -q :app:exportLibraryDefinitions",
+    "licenses:android": "node scripts/gradlew.mjs -q :app:exportLibraryDefinitions",
     "android:sync": "npm run build && cap sync android",
-    "android:build:debug": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:build:debug": "npm run android:sync && node scripts/gradlew.mjs assembleDebug"
   },
   "dependencies": {
     "@angular/common": "22.2.5",
