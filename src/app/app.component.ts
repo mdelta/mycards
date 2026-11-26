@@ -14,12 +14,16 @@ export class AppComponent {
 
   constructor() {
     void inject(ThemeService).init();
-    inject(TELEMETRY)
-      .init()
-      .catch(() => undefined);
+    const telemetry = inject(TELEMETRY);
+    telemetry.init().catch(() => undefined);
+    const platform = inject(Platform);
+    // The app may stay in memory for weeks; check the weekly usage summary when it comes back.
+    platform.resume.subscribe(() => {
+      telemetry.sendUsageIfDue().catch(() => undefined);
+    });
     const exitApp = inject(EXIT_APP);
     // Lowest priority: runs only when no page, overlay or menu handled Back.
-    inject(Platform).backButton.subscribeWithPriority(-1, () => {
+    platform.backButton.subscribeWithPriority(-1, () => {
       if (!this.outlet().canGoBack()) {
         void exitApp();
       }
