@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { isDevMode } from '@angular/core';
+import { ErrorHandler, isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import {
   RouteReuseStrategy,
@@ -21,10 +21,12 @@ import {
   provideCardStorage,
   providePhotos,
 } from './app/infrastructure/providers';
+import { TelemetryErrorHandler } from './app/ui/telemetry-error-handler';
 
 bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    { provide: ErrorHandler, useClass: TelemetryErrorHandler },
     provideIonicAngular(),
     provideRouter(routes, withPreloading(PreloadAllModules), withComponentInputBinding()),
     provideHttpClient(),

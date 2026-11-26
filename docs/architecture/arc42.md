@@ -100,7 +100,7 @@ flowchart LR
 | Lock screen           | Quick-Settings tile → native Activity shown over the lock screen     | [DECIDED] ADR-0006 |
 | Google Play           | Play Developer API, used by GitHub Actions for uploads              | [DECIDED] ADR-0008 |
 | Internet              | Permission kept; used by ML Kit metrics and opt-in Sentry reports. Possible future: download card presets from a backend (idea only) | [DECIDED] ADR-0015 |
-| Sentry (sentry.io, EU) | Opt-in crash reports and usage data, two separate switches, off by default | [DECIDED] ADR-0018 |
+| Sentry (sentry.io, EU) | Opt-in crash reports (app code only, no native crashes) and weekly usage counts, two separate switches, off by default; `@sentry/browser`; DSN from build secret `SENTRY_DSN`, switches hidden without it; every report shown under "Sent data" | [DECIDED] ADR-0018 |
 
 ---
 

@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
+  AlertController,
   IonBackButton,
   IonButtons,
   IonContent,
@@ -14,6 +15,7 @@ import {
   IonRadioGroup,
   IonRouterLink,
   IonTitle,
+  IonToggle,
   IonToolbar,
   ToastController,
 } from '@ionic/angular';
@@ -21,7 +23,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import type { Theme } from '../../../domain/model/settings';
 import { THEMES } from '../../../domain/model/settings';
-import { APP_INFO, EXTERNAL_LAUNCHER } from '../../../infrastructure/providers';
+import type { TelemetryConsent } from '../../../domain/model/telemetry';
+import { APP_INFO, EXTERNAL_LAUNCHER, TELEMETRY } from '../../../infrastructure/providers';
 import { ThemeService } from '../../theme.service';
 
 export const SOURCE_CODE_URL = 'https://github.com/mdelta/mycards';
@@ -45,6 +48,7 @@ export const SOURCE_CODE_URL = 'https://github.com/mdelta/mycards';
     IonRadio,
     IonRadioGroup,
     IonTitle,
+    IonToggle,
     IonToolbar,
     TranslocoDirective,
   ],
@@ -53,6 +57,9 @@ export class SettingsPage {
   private readonly launcher = inject(EXTERNAL_LAUNCHER);
   private readonly toasts = inject(ToastController);
   private readonly transloco = inject(TranslocoService);
+  private readonly alerts = inject(AlertController);
+  readonly telemetry = inject(TELEMETRY);
+  readonly consent = signal<TelemetryConsent>({ crashReports: false, usageData: false });
   readonly themes = THEMES;
   readonly themeService = inject(ThemeService);
   readonly version = signal<string | undefined>(undefined);
@@ -61,10 +68,40 @@ export class SettingsPage {
     void inject(APP_INFO)
       .version()
       .then((version) => this.version.set(version));
+    if (this.telemetry.available) {
+      void this.telemetry.consent().then((consent) => this.consent.set(consent));
+    }
   }
 
   onTheme(event: CustomEvent<{ value: Theme }>): void {
     void this.themeService.set(event.detail.value);
+  }
+
+  /** Turning a switch on first shows which data is sent (ADR-0018). */
+  async onConsent(key: keyof TelemetryConsent, event: CustomEvent<{ checked: boolean }>): Promise<void> {
+    const checked = event.detail.checked;
+    if (checked && !(await this.confirmConsent(key))) {
+      (event.target as HTMLIonToggleElement).checked = false;
+      return;
+    }
+    const consent = { ...this.consent(), [key]: checked };
+    this.consent.set(consent);
+    await this.telemetry.setConsent(consent);
+  }
+
+  private async confirmConsent(key: keyof TelemetryConsent): Promise<boolean> {
+    const t = (k: string): string => this.transloco.translate(`settings.reports.${k}`);
+    const alert = await this.alerts.create({
+      header: t(`${key}Consent.header`),
+      message: t(`${key}Consent.message`),
+      cssClass: 'consent-alert',
+      buttons: [
+        { text: t('cancel'), role: 'cancel' },
+        { text: t('turnOn'), role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    return (await alert.onDidDismiss()).role === 'confirm';
   }
 
   async openSourceCode(): Promise<void> {

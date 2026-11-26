@@ -1,7 +1,7 @@
 # ADR-0018: Opt-in crash reports and usage data via Sentry
 
 - Status: accepted
-- Date: 2026-11-23
+- Date: 2026-11-23, implementation details 2026-11-26
 - arc42 reference: 1.2, 3.2, 8, 11
 
 ## Context
@@ -34,13 +34,45 @@ device. Users must know what is sent and should be able to see it.
   Settings → "Sent data".
 - Nothing is sent and the Sentry SDK is not started while both switches are off.
 
+### Implementation (step R-B, PO decisions 2026-11-26)
+
+- **Only errors of the app's own code** (TypeScript/Angular) are reported, so every report passes
+  the app's filter and appears under "Sent data". Native Android crashes are **not** reported.
+  Therefore the app uses `@sentry/browser` (MIT) only, loaded lazily when a switch is turned on;
+  `@sentry/capacitor` and its native Android SDK are not used. Device details come from
+  `@capacitor/device` (MIT, no permissions).
+- **SDK configuration:** no default integrations except error capture (global handlers, browser API
+  errors, linked errors, dedupe, event filters); no breadcrumbs, tracing, sessions, client reports,
+  user data, cookies, headers or URL query parameters; offline transport so reports wait for a
+  connection.
+- **Allow-list:** `beforeSend` rebuilds each event from a fixed set of fields: event ID, time,
+  level, release, environment, SDK name/version, OS/device/app context (Android version, model,
+  manufacturer, app version), exception type, mechanism and stack frames (file without query, function,
+  line, column). Everything else is dropped.
+- **Scrubbing:** before an error is sent, the domain replaces texts of all stored cards and tags
+  (≥ 3 characters, ignoring case), quoted text and numbers with ≥ 4 digits in error messages, and
+  cuts them at 500 characters. If the cards can't be read, the messages are removed.
+- **Usage summary:** one Sentry info event per week, counts only: cards, cards per barcode type,
+  tags, photos and uses of scan, add manually, show card, MyCards/Catima export and MyCards/Catima
+  import. Counting only runs while usage data is on; turning it on starts a new, empty week.
+- **"Sent data":** the final event, exactly as handed to Sentry, is stored locally (newest 20) with
+  `@capacitor/preferences`, like the consent and the counters. None of this is exported.
+- **DSN:** from the build environment variable `SENTRY_DSN` (GitHub secret), passed to Angular as a
+  build-time define. Builds without it (local builds, CI debug builds, forks) hide both switches
+  and never start the SDK.
+- **Source maps:** uploaded with the release workflow in step 10; until then stack traces are
+  minified.
+
 ## Consequences
 
 - Privacy goal #2, ADR-0015 and the arc42 constraints change: besides ML Kit's metrics, MyCards
   itself sends data, but only after the user opts in, and never card content.
 - The privacy policy and the Play data safety form must declare crash logs, diagnostics and app
   interactions as optional, user-controlled collection.
-- The PO creates the Sentry account and project in the EU region; the DSN goes into the build
-  configuration. A DSN is not a secret, but is kept out of source code where practical.
-- To verify when implementing: native crash capture and the EU ingest endpoint with the current
-  `@sentry/capacitor` version.
+- The PO creates the Sentry account and project in the EU region, turns on "Prevent Storing of IP
+  Addresses" and stores the DSN as GitHub secret `SENTRY_DSN`. A DSN is not a secret, but keeping
+  it out of the source code keeps forks from reporting to this project.
+- Native crashes (e.g. in SQLite or ML Kit native code) stay invisible to the developer. This keeps
+  the promise that every sent report is visible and filtered.
+- The scrubbing is a heuristic; the allow-list is the main protection. Error messages are the only
+  free text sent.

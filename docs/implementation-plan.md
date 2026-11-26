@@ -130,7 +130,7 @@ Requested by the product owner and clarified before the release step.
 | --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | R-1 | Opt-in usage data (Sentry) | [DECIDED] ADR-0018: Sentry on sentry.io, EU region; own switch, off by default; weekly summary of counts (cards, barcode types, tags, photos, used features), no card content; sent reports visible in the app.                                            |
 | R-2 | "Buy me a coffee"          | [DEFERRED] Skipped for now (PO). Google Play's payments policy requires Play Billing for payments in the app and forbids in-app links to other payment methods, except tax-exempt donations.                                                               |
-| R-3 | Opt-in crash reports       | [DECIDED] ADR-0018: same Sentry setup as R-1, separate switch, off by default; TypeScript errors and native crashes.                                                                                                                                       |
+| R-3 | Opt-in crash reports       | [DECIDED] ADR-0018: same Sentry setup as R-1, separate switch, off by default; errors of the app's own code only (no native crashes, PO 2026-11-26).                                                                                                       |
 | R-4 | Settings page              | [DECIDED] Theme (system, light, dark), the two switches and "Sent data" (R-1, R-3), privacy notes, source code link, licenses incl. third-party licenses, app version. Privacy policy also on a public page (GitHub Pages), as Google Play requires a URL. |
 | R-5 | App logo                   | [DECIDED] Devin drafts three SVG concepts; the PO picks one; then adaptive icon (incl. monochrome layer), legacy launcher icons, 512 px Play icon and feature graphic.                                                                                     |
 | R-6 | Play store text            | [DECIDED] English, factual and friendly; short (≤ 80 characters) and full description (≤ 4000 characters); drafted after R-1 to R-5 are built so it matches the app.                                                                                       |
@@ -145,9 +145,12 @@ Requested by the product owner and clarified before the release step.
 
 ### Step R-B – Opt-in crash reports and usage data (R-1, R-3; ADR-0018)
 
-- `@sentry/capacitor` + `@sentry/angular`, started only when a switch is on.
-- Consent dialogs listing the sent data, weekly usage summary, local "Sent data" log, scrubbing
-  tests that prove no card content is sent.
+- `@sentry/browser`, loaded and started only when a switch is on; Angular `ErrorHandler` reports
+  errors of the app's own code; no native crash reporting.
+- Consent dialogs listing the sent data, weekly usage summary, local "Sent data" log (newest 20),
+  allow-list and scrubbing tests that prove no card content is sent.
+- [DECIDED] DSN from the `SENTRY_DSN` build variable (GitHub secret); switches hidden without it.
+  Source-map upload follows in step 10. Details in ADR-0018.
 
 ### Step R-C – Logo and store listing (R-5, R-6)
 
@@ -157,7 +160,7 @@ Requested by the product owner and clarified before the release step.
 ### Step 10 – Release (N-01; ADR-0008)
 
 - Answer Q-14 (tooling, tracks, trigger), signing with the upload key from GitHub Secrets,
-  AAB build, Play upload, store listing, data safety form, privacy policy (both must declare
+  AAB build with `SENTRY_DSN` and source-map upload to Sentry, Play upload, store listing, data safety form, privacy policy (both must declare
   Google ML Kit's usage metrics, ADR-0010, and the opt-in Sentry reports, ADR-0018).
 - Needs the Google Play developer account.
 

@@ -28,7 +28,7 @@ import type { Card } from '../../../domain/model/card';
 import { barcodeValueOf } from '../../../domain/services/barcode-value';
 import { CardService } from '../../../domain/services/card-service';
 import { isWebUrl, openShopSearch } from '../../../domain/services/links';
-import { BARCODE_RENDERER, EXTERNAL_LAUNCHER, PRESENTATION_MODE } from '../../../infrastructure/providers';
+import { BARCODE_RENDERER, EXTERNAL_LAUNCHER, PRESENTATION_MODE, TELEMETRY } from '../../../infrastructure/providers';
 import { PhotoUrlPipe } from '../../photo-url.pipe';
 
 type BarcodeView = { kind: 'loading' } | { kind: 'none' } | { kind: 'error' } | { kind: 'image'; url: SafeUrl };
@@ -69,6 +69,7 @@ export class CardDetailPage implements ViewWillEnter, ViewWillLeave {
   private readonly launcher = inject(EXTERNAL_LAUNCHER);
   private readonly toasts = inject(ToastController);
   private readonly transloco = inject(TranslocoService);
+  private readonly telemetry = inject(TELEMETRY);
 
   /** Route parameter. */
   readonly id = input.required<string>();
@@ -89,6 +90,7 @@ export class CardDetailPage implements ViewWillEnter, ViewWillLeave {
     this.loaded.set(true);
     if (card) {
       this.cardService.markUsed(card.id).catch(() => undefined);
+      void this.telemetry.count('showCard');
       this.barcode.set(await this.render(card));
       const tags = await this.cardService.listTags();
       this.tagNames.set(tags.filter((tag) => card.tagIds.includes(tag.id)).map((tag) => tag.name));

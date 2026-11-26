@@ -1,6 +1,6 @@
 # MyCards privacy policy
 
-Last updated: 2026-11-25
+Last updated: 2026-11-26
 
 MyCards is a free, open-source Android app for loyalty cards. This policy explains which data the
 app handles and where it goes.
@@ -11,6 +11,7 @@ app handles and where it goes.
 - The MyCards developer does not receive, sell or share your card data.
 - Google's barcode scanner, which MyCards uses, sends usage metrics to Google. These metrics don't
   contain your cards, camera images or barcode values.
+- Crash reports and usage data are off unless you turn them on. They never contain your cards.
 
 ## Data stored on your phone
 
@@ -56,8 +57,25 @@ your browser or map app. That app's privacy policy applies from then on.
 
 ## Crash reports and usage data
 
-This version of MyCards sends no crash reports or usage data. A later version may offer them as an
-option that is off by default. This policy will be updated before that happens.
+MyCards can send crash reports and usage data to help improve the app. Both are **off by default**
+and have separate switches under Settings. Before a switch turns on, the app lists what is sent.
+
+The data goes to [Sentry](https://sentry.io) (Functional Software, Inc.), stored in its EU data
+region, under the [Sentry Privacy Policy](https://sentry.io/privacy/). Sentry is told not to store
+IP addresses.
+
+- **Crash reports:** when an error occurs in the app's code: the error type and message, with card
+  content, quoted text and longer numbers removed; where in the app's code the error happened; app
+  version, Android version, phone model and manufacturer.
+- **Usage data:** once a week: number of cards, cards per barcode type, number of tags and photos,
+  how often you scanned, added, showed, exported and imported cards; app version, Android version,
+  phone model and manufacturer.
+
+Never sent: store names, card IDs, barcode values, notes, photos, tag names, websites or any other
+card content, and no account or advertising identifier. Every report MyCards sends is kept on your
+phone and shown under Settings → Sent data (the latest 20). Turning a switch off stops sending
+immediately. The legal basis is your consent (Art. 6(1)(a) GDPR), which you can withdraw at any time
+by turning the switch off.
 
 ## Your choices
 

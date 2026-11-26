@@ -213,6 +213,23 @@
       "licenses": "Licenses",
       "version": "Version",
       "versionBrowser": "Browser version"
+    },
+    "reports": {
+      "header": "Help improve MyCards",
+      "hint": "Both are off by default. Card names, numbers, barcodes, notes, photos, tags and websites are never sent.",
+      "crashReports": "Send crash reports",
+      "usageData": "Send usage data",
+      "sentData": "Sent data",
+      "cancel": "Cancel",
+      "turnOn": "Turn on",
+      "crashReportsConsent": {
+        "header": "Send crash reports?",
+        "message": "When an error occurs, MyCards sends a report to Sentry (sentry.io, EU data region):\n• the error message, with card content and longer numbers removed\n• where in the app's code the error happened\n• app version, Android version and phone model\n\nNo card content and no IP address are sent. You can see every report under \"Sent data\"."
+      },
+      "usageDataConsent": {
+        "header": "Send usage data?",
+        "message": "Once a week, MyCards sends a summary to Sentry (sentry.io, EU data region):\n• number of cards, cards per barcode type, number of tags and photos\n• how often you scanned, added, showed, exported and imported cards\n• app version, Android version and phone model\n\nNo card content and no IP address are sent. You can see every report under \"Sent data\"."
+      }
     }
   },
   "privacy": {
@@ -228,5 +245,14 @@
     "notInBuild": "Not included in this build.",
     "openLicense": "Open license",
     "noText": "No license text available."
+  },
+  "sentData": {
+    "title": "Sent data",
+    "intro": "The last 20 reports MyCards sent to Sentry, exactly as sent.",
+    "empty": "Nothing sent yet.",
+    "kind": {
+      "crash": "Crash report",
+      "usage": "Usage summary"
+    }
   }
 }
