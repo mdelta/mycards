@@ -157,11 +157,13 @@ Requested by the product owner and clarified before the release step.
 - Logo concepts → chosen logo → all Android and Play sizes.
 - Store listing draft for step 10.
 
-### Step 10 – Release (N-01; ADR-0008)
+### Step 10 – Release (N-01, N-03; ADR-0008, ADR-0020)
 
 - Answer Q-14 (tooling, tracks, trigger), signing with the upload key from GitHub Secrets,
   AAB build with `SENTRY_DSN` and source-map upload to Sentry, Play upload, store listing, data safety form, privacy policy (both must declare
   Google ML Kit's usage metrics, ADR-0010, and the opt-in Sentry reports, ADR-0018).
+- SBOM (N-03, ADR-0020): one combined CycloneDX JSON for npm and Gradle runtime dependencies, as CI
+  artifact on every build and attached to every GitHub release.
 - Needs the Google Play developer account.
 
 ### Step 11 – Polish
