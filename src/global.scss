@@ -36,3 +36,8 @@
 /* The theme setting (R-4) toggles the class; ThemeService follows the system setting by default. */
 @import '@ionic/angular/css/palettes/dark.class.css';
 /* @import '@ionic/angular/css/palettes/dark.system.css'; */
+
+/* Consent dialogs list the sent data line by line (ADR-0018). */
+.consent-alert .alert-message {
+  white-space: pre-line;
+}

@@ -29,7 +29,7 @@ import { photoOf } from '../../../domain/model/photo';
 import { ScannerNotReadyError } from '../../../domain/ports/barcode-scanner';
 import { filterCards } from '../../../domain/services/card-filter';
 import { CardService } from '../../../domain/services/card-service';
-import { BARCODE_SCANNER } from '../../../infrastructure/providers';
+import { BARCODE_SCANNER, TELEMETRY } from '../../../infrastructure/providers';
 import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.component';
 import { PhotoUrlPipe } from '../../photo-url.pipe';
 
@@ -68,6 +68,7 @@ export class HomePage implements ViewWillEnter {
   private readonly toasts = inject(ToastController);
   private readonly transloco = inject(TranslocoService);
   readonly scanner = inject(BARCODE_SCANNER);
+  private readonly telemetry = inject(TELEMETRY);
 
   readonly cards = signal<Card[]>([]);
   readonly loaded = signal(false);
@@ -103,6 +104,7 @@ export class HomePage implements ViewWillEnter {
     try {
       const barcode = await this.scanner.scan();
       if (barcode) {
+        void this.telemetry.count('scan');
         await this.router.navigate(['/cards/new'], {
           queryParams: { scannedType: barcode.type, scannedValue: barcode.value },
         });

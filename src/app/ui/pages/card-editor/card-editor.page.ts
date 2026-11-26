@@ -44,6 +44,7 @@ import type { PhotoSourceKind } from '../../../domain/ports/photo-source';
 import type { CardDraft, CardValidationError } from '../../../domain/services/card-draft';
 import { CardService, InvalidCardError } from '../../../domain/services/card-service';
 import { PhotoService } from '../../../domain/services/photo-service';
+import { TELEMETRY } from '../../../infrastructure/providers';
 import { CARD_ICONS, CARD_ICON_KEYS } from '../../card-icons';
 import { CardAvatarComponent } from '../../components/card-avatar/card-avatar.component';
 import { PhotoUrlPipe } from '../../photo-url.pipe';
@@ -93,6 +94,7 @@ export class CardEditorPage implements OnInit {
   private readonly toasts = inject(ToastController);
   private readonly photoService = inject(PhotoService);
   private readonly transloco = inject(TranslocoService);
+  private readonly telemetry = inject(TELEMETRY);
 
   /** Route parameter; undefined when creating a new card. */
   readonly id = input<string>();
@@ -287,6 +289,9 @@ export class CardEditorPage implements OnInit {
         return;
       }
       throw error;
+    }
+    if (!id && !this.scannedValue()) {
+      void this.telemetry.count('addManually');
     }
     this.pruneUnusedPhotos();
     await (id ? this.nav.navigateBack(['/cards', id]) : this.nav.navigateBack('/home'));

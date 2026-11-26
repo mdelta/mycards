@@ -34,6 +34,10 @@ export const routes: Routes = [
     loadComponent: () => import('./ui/pages/licenses/licenses.page').then((m) => m.LicensesPage),
   },
   {
+    path: 'settings/sent-data',
+    loadComponent: () => import('./ui/pages/sent-data/sent-data.page').then((m) => m.SentDataPage),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

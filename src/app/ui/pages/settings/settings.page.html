@@ -19,6 +19,26 @@
         }
       </ion-radio-group>
 
+      @if (telemetry.available) {
+      <ion-list-header>{{ t('reports.header') }}</ion-list-header>
+      <ion-item>
+        <ion-toggle [checked]="consent().crashReports" (ionChange)="onConsent('crashReports', $event)">
+          {{ t('reports.crashReports') }}
+        </ion-toggle>
+      </ion-item>
+      <ion-item>
+        <ion-toggle [checked]="consent().usageData" (ionChange)="onConsent('usageData', $event)">
+          {{ t('reports.usageData') }}
+        </ion-toggle>
+      </ion-item>
+      <ion-item routerLink="/settings/sent-data" [detail]="true">
+        <ion-label>
+          {{ t('reports.sentData') }}
+          <p>{{ t('reports.hint') }}</p>
+        </ion-label>
+      </ion-item>
+      }
+
       <ion-list-header>{{ t('about.header') }}</ion-list-header>
       <ion-item routerLink="/settings/privacy" [detail]="true">
         <ion-label>{{ t('about.privacy') }}</ion-label>

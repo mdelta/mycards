@@ -1,0 +1,33 @@
+<ng-container *transloco="let t; prefix: 'sentData'">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/settings" />
+      </ion-buttons>
+      <ion-title>{{ t('title') }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content class="ion-padding">
+    <ion-text color="medium">
+      <p>{{ t('intro') }}</p>
+    </ion-text>
+    @if (reports(); as reports) { @if (reports.length) {
+    <ion-accordion-group>
+      @for (report of reports; track $index) {
+      <ion-accordion>
+        <ion-item slot="header">
+          <ion-label>{{ t('kind.' + report.kind) }}</ion-label>
+          <ion-note slot="end">{{ report.sentAt | date: 'medium' }}</ion-note>
+        </ion-item>
+        <div slot="content" class="ion-padding">
+          <pre>{{ report.payload | json }}</pre>
+        </div>
+      </ion-accordion>
+      }
+    </ion-accordion-group>
+    } @else {
+    <p data-testid="sent-data-empty">{{ t('empty') }}</p>
+    } }
+  </ion-content>
+</ng-container>

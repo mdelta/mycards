@@ -1,10 +1,11 @@
 import { DOCUMENT } from '@angular/common';
 import type { EnvironmentProviders, Provider } from '@angular/core';
-import { InjectionToken, inject, makeEnvironmentProviders } from '@angular/core';
+import { InjectionToken, Injector, inject, isDevMode, makeEnvironmentProviders } from '@angular/core';
 import { App } from '@capacitor/app';
 import { AppLauncher } from '@capacitor/app-launcher';
 import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 import { Filesystem } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { Share } from '@capacitor/share';
@@ -25,6 +26,7 @@ import type { SettingsStore } from '../domain/ports/settings-store';
 import { BackupService } from '../domain/services/backup-service';
 import { CardService } from '../domain/services/card-service';
 import { PhotoService } from '../domain/services/photo-service';
+import { TelemetryService } from '../domain/services/telemetry-service';
 
 import { BrowserBackupFiles } from './backup/browser-backup-files';
 import { CapacitorBackupFiles } from './backup/capacitor-backup-files';
@@ -46,6 +48,9 @@ import { SqliteCardRepository } from './sqlite/sqlite-card-repository';
 import { CapacitorAppInfo } from './system/capacitor-app-info';
 import { SystemClock } from './system/system-clock';
 import { UuidGenerator } from './system/uuid-generator';
+import { BUILD_SENTRY_DSN } from './telemetry/build-config';
+import { PreferencesTelemetryStore } from './telemetry/preferences-telemetry-store';
+import { SentryReportSender } from './telemetry/sentry-report-sender';
 
 export const SQL_DATABASE = new InjectionToken<SqlDatabase>('SqlDatabase');
 export const CARD_REPOSITORY = new InjectionToken<CardRepository>('CardRepository');
@@ -77,6 +82,27 @@ export const SETTINGS_STORE = new InjectionToken<SettingsStore>('SettingsStore',
 export const APP_INFO = new InjectionToken<AppInfo>('AppInfo', {
   providedIn: 'root',
   factory: () => new CapacitorAppInfo(App, Capacitor.isNativePlatform()),
+});
+
+/** Opt-in crash reports and usage data via Sentry (R-1, R-3, ADR-0018). */
+export const TELEMETRY = new InjectionToken<TelemetryService>('Telemetry', {
+  providedIn: 'root',
+  factory: () => {
+    const injector = inject(Injector);
+    const sender = new SentryReportSender(
+      BUILD_SENTRY_DSN,
+      () => import('@sentry/browser'),
+      Device,
+      async () => (Capacitor.isNativePlatform() ? App.getInfo() : undefined),
+      isDevMode() ? 'development' : 'production',
+    );
+    return new TelemetryService(
+      new PreferencesTelemetryStore(Preferences),
+      sender,
+      () => injector.get(CARD_REPOSITORY),
+      new SystemClock(),
+    );
+  },
 });
 
 /** Closes the app; Ionic's Back handling replaces Android's default once `@capacitor/app` is installed. */

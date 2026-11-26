@@ -1,12 +1,13 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 
 import en from '../../../../assets/i18n/en.json';
 import type { Theme } from '../../../domain/model/settings';
-import { APP_INFO, EXTERNAL_LAUNCHER, SETTINGS_STORE } from '../../../infrastructure/providers';
+import type { TelemetryConsent } from '../../../domain/model/telemetry';
+import { APP_INFO, EXTERNAL_LAUNCHER, SETTINGS_STORE, TELEMETRY } from '../../../infrastructure/providers';
 
 import { SOURCE_CODE_URL, SettingsPage } from './settings.page';
 
@@ -16,6 +17,15 @@ describe('SettingsPage', () => {
   let version: string | undefined;
   const launcher = { open: vi.fn(async () => true) };
   const toastController = { create: vi.fn(async () => ({ present: vi.fn() })) };
+  let alertRole: string;
+  const alertController = {
+    create: vi.fn(async () => ({ present: vi.fn(), onDidDismiss: async () => ({ role: alertRole }) })),
+  };
+  let telemetry: {
+    available: boolean;
+    consent: () => Promise<TelemetryConsent>;
+    setConsent: ReturnType<typeof vi.fn>;
+  };
 
   async function create(): Promise<void> {
     await TestBed.configureTestingModule({
@@ -35,6 +45,8 @@ describe('SettingsPage', () => {
         { provide: APP_INFO, useValue: { version: async () => version } },
         { provide: EXTERNAL_LAUNCHER, useValue: launcher },
         { provide: ToastController, useValue: toastController },
+        { provide: AlertController, useValue: alertController },
+        { provide: TELEMETRY, useValue: telemetry },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(SettingsPage);
@@ -51,6 +63,73 @@ describe('SettingsPage', () => {
     vi.clearAllMocks();
     stored = 'system';
     version = '1.0 (1)';
+    alertRole = 'confirm';
+    telemetry = {
+      available: false,
+      consent: async () => ({ crashReports: false, usageData: true }),
+      setConsent: vi.fn(async () => undefined),
+    };
+  });
+
+  const toggleEvent = (checked: boolean): CustomEvent<{ checked: boolean }> => {
+    const event = new CustomEvent('ionChange', { detail: { checked } });
+    Object.defineProperty(event, 'target', { value: { checked } });
+    return event;
+  };
+
+  it('hides the report switches in builds without a DSN', async () => {
+    await create();
+
+    expect(text()).not.toContain('Send crash reports');
+    expect(text()).not.toContain('Sent data');
+  });
+
+  it('shows the report switches with the stored consent', async () => {
+    telemetry.available = true;
+    await create();
+
+    expect(text()).toContain('Send crash reports');
+    expect(text()).toContain('Send usage data');
+    expect(text()).toContain('Sent data');
+    const toggles = fixture.nativeElement.querySelectorAll('ion-toggle');
+    expect([...toggles].map((t: HTMLIonToggleElement) => t.checked)).toEqual([false, true]);
+  });
+
+  it('turns a switch on only after the user confirms the listed data', async () => {
+    telemetry.available = true;
+    await create();
+
+    await fixture.componentInstance.onConsent('crashReports', toggleEvent(true));
+
+    expect(alertController.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        header: 'Send crash reports?',
+        message: expect.stringContaining('No card content and no IP address are sent.'),
+      }),
+    );
+    expect(telemetry.setConsent).toHaveBeenCalledWith({ crashReports: true, usageData: true });
+  });
+
+  it('leaves a switch off when the user cancels', async () => {
+    telemetry.available = true;
+    alertRole = 'cancel';
+    await create();
+    const event = toggleEvent(true);
+
+    await fixture.componentInstance.onConsent('crashReports', event);
+
+    expect((event.target as HTMLIonToggleElement).checked).toBe(false);
+    expect(telemetry.setConsent).not.toHaveBeenCalled();
+  });
+
+  it('turns a switch off without asking', async () => {
+    telemetry.available = true;
+    await create();
+
+    await fixture.componentInstance.onConsent('usageData', toggleEvent(false));
+
+    expect(alertController.create).not.toHaveBeenCalled();
+    expect(telemetry.setConsent).toHaveBeenCalledWith({ crashReports: false, usageData: false });
   });
 
   it('lists theme, privacy policy, source code, licenses and version', async () => {

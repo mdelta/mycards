@@ -28,7 +28,7 @@ import type { BackupFormat } from '../../../domain/services/backup-service';
 import { BackupService } from '../../../domain/services/backup-service';
 import { CardService } from '../../../domain/services/card-service';
 import type { CatimaLoss } from '../../../domain/services/catima-format';
-import { BACKUP_FILES } from '../../../infrastructure/providers';
+import { BACKUP_FILES, TELEMETRY } from '../../../infrastructure/providers';
 
 /** Export and import in the own format and the Catima format (F-05, F-11, ADR-0004). */
 @Component({
@@ -62,6 +62,7 @@ export class BackupPage {
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
   private readonly transloco = inject(TranslocoService);
+  private readonly telemetry = inject(TELEMETRY);
 
   readonly password = signal('');
   readonly passwordRepeat = signal('');
@@ -100,6 +101,7 @@ export class BackupPage {
         await this.files.share(await this.backup.createBackup(this.password(), this.format()));
         this.password.set('');
         this.passwordRepeat.set('');
+        void this.telemetry.count(this.format() === 'catima' ? 'exportCatima' : 'exportMyCards');
         await this.toast('export.done');
       } catch {
         await this.toast('export.failed');
@@ -114,6 +116,7 @@ export class BackupPage {
         const content = file && (await this.readWithPassword(file.data));
         if (content && (await this.confirmImport(content))) {
           await this.backup.restoreBackup(content, { clean: this.clean() });
+          void this.telemetry.count(content.format === 'catima' ? 'importCatima' : 'importMyCards');
           await this.toast('import.done', { count: content.cards.length });
           if (content.unsupportedBarcodes?.length) {
             await this.inform(
