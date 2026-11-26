@@ -88,10 +88,11 @@ export class TelemetryService {
       return;
     }
     if (start) {
+      // The week ends only once Sentry accepted the summary (see record); otherwise it is retried.
       this.sender.sendUsage(await this.usageSummary());
-      await this.store.resetUsageCounts();
+    } else {
+      await this.store.setUsagePeriodStart(now);
     }
-    await this.store.setUsagePeriodStart(now);
   }
 
   async usageSummary(): Promise<UsageSummary> {
@@ -145,6 +146,11 @@ export class TelemetryService {
   }
 
   private async record(kind: ReportKind, payload: unknown): Promise<void> {
-    await this.store.addSentReport({ kind, sentAt: this.clock.now(), payload }, SENT_REPORTS_LIMIT);
+    const now = this.clock.now();
+    await this.store.addSentReport({ kind, sentAt: now, payload }, SENT_REPORTS_LIMIT);
+    if (kind === 'usage') {
+      await this.store.resetUsageCounts();
+      await this.store.setUsagePeriodStart(now);
+    }
   }
 }

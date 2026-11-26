@@ -55,7 +55,8 @@ device. Users must know what is sent and should be able to see it.
 - **Usage summary:** one Sentry info event per week, counts only: cards, cards per barcode type,
   tags, photos and uses of scan, add manually, show card, MyCards/Catima export and MyCards/Catima
   import. Counting only runs while usage data is on; turning it on starts a new, empty week. The
-  check runs at app start and whenever the app returns to the foreground.
+  check runs at app start and whenever the app returns to the foreground. The week ends only when
+  Sentry accepted the summary; otherwise it is sent again at the next check.
 - **"Sent data":** the final event, exactly as sent, is stored locally once Sentry accepted it
   (newest 20) with
   `@capacitor/preferences`, like the consent and the counters. None of this is exported.

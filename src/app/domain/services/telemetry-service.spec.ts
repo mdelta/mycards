@@ -157,12 +157,28 @@ describe('TelemetryService', () => {
         importCatima: 0,
       },
     });
+    expect(store.counts).toEqual({ scan: 2, exportCatima: 1 });
+
+    await hooks!.record('usage', { message: 'Usage summary' });
     expect(store.counts).toEqual({});
     expect(store.periodStart).toBe(now);
 
     now = '2026-12-07T10:00:00.000Z';
     await service.sendUsageIfDue();
     expect(sender.sendUsage).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends the usage summary again when Sentry did not accept it', async () => {
+    store.stored = { crashReports: false, usageData: true };
+    store.periodStart = '2026-11-24T10:00:00.000Z';
+    store.counts = { scan: 2 };
+
+    await service.init();
+    await service.sendUsageIfDue();
+
+    expect(sender.sendUsage).toHaveBeenCalledTimes(2);
+    expect(store.counts).toEqual({ scan: 2 });
+    expect(store.periodStart).toBe('2026-11-24T10:00:00.000Z');
   });
 
   it('starts the first usage period without sending when none is stored', async () => {
