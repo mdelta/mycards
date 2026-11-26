@@ -29,6 +29,7 @@ Source: initial request by the product owner (2026-11-08).
 | F-08 | Show barcodes of cards marked "show on lock screen" without unlocking; swipe between them, favorites first | Optional  |
 | N-01 | Android app, distributed via Google Play Store                                                        | Must      |
 | N-02 | Prefer TypeScript / web technology, avoid Java/Kotlin where possible                                  | Should    |
+| N-03 | Create one combined SBOM (CycloneDX JSON, npm and Android dependencies) for every build and release (ADR-0020) | Must      |
 
 Remaining scope questions: see section 11.2.
 
@@ -290,7 +291,8 @@ In the browser the scan action is hidden; manual entry (F-10) is always availabl
   rules.)
 - Source hosting: GitHub repository `mycards`.
 - CI/CD: GitHub Actions – build, test, sign (upload key from GitHub Secrets), upload AAB to a Play
-  track (ADR-0008). Note: the very first upload of a new app is usually done manually in the Play
+  track (ADR-0008). Every build also creates a CycloneDX SBOM as artifact; releases attach it to
+  the GitHub release (N-03, ADR-0020). Note: the very first upload of a new app is usually done manually in the Play
   Console – verify when the developer account exists.
 
 ---
@@ -332,6 +334,7 @@ Decisions are recorded as ADRs in [`adr/`](adr/) (template: [`0000-template.md`]
 | [0017](adr/0017-barcode-types-and-input.md) | All barcode types; camera-only scanning | accepted |
 | [0018](adr/0018-opt-in-crash-reports-and-usage-data.md) | Opt-in crash reports and usage data via Sentry | accepted |
 | [0019](adr/0019-settings-privacy-policy-and-licenses.md) | Settings, privacy policy and licenses | accepted |
+| [0020](adr/0020-sbom-cyclonedx.md) | SBOM in CycloneDX format | accepted |
 
 ---
 
