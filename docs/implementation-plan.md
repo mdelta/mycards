@@ -117,10 +117,12 @@ presentation, privacy, data safety, maintainability, offline).
 
 ### Step 9 – Lock-screen tile (F-08, optional; ADR-0006)
 
-- Spike on a device first (risk in arc42 §11.1).
 - Native Kotlin plugin: Quick Settings tile + minimal Activity over the lock screen showing
   pre-rendered barcode images of cards marked `showOnLockScreen`, favorites first, swipe between them.
 - TypeScript side: render images on change, sync to the plugin; images excluded from Auto Backup.
+- [DECIDED] Details (PO 2026-11-27, ADR-0006): Kotlin; each card shows name, barcode and number as
+  text; "Add tile" button in Settings using Android's prompt, adding the tile by hand also works.
+  No separate spike: one PR with the full feature, tested by the PO on an emulator before merging.
 
 ### Before step 10 – New features (clarified)
 

@@ -24,7 +24,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import type { Theme } from '../../../domain/model/settings';
 import { THEMES } from '../../../domain/model/settings';
 import type { TelemetryConsent } from '../../../domain/model/telemetry';
-import { APP_INFO, EXTERNAL_LAUNCHER, TELEMETRY } from '../../../infrastructure/providers';
+import { APP_INFO, EXTERNAL_LAUNCHER, LOCK_SCREEN, TELEMETRY } from '../../../infrastructure/providers';
 import { ThemeService } from '../../theme.service';
 
 export const SOURCE_CODE_URL = 'https://github.com/mdelta/mycards';
@@ -59,6 +59,7 @@ export class SettingsPage {
   private readonly transloco = inject(TranslocoService);
   private readonly alerts = inject(AlertController);
   readonly telemetry = inject(TELEMETRY);
+  readonly lockScreen = inject(LOCK_SCREEN);
   readonly consent = signal<TelemetryConsent>({ crashReports: false, usageData: false });
   readonly themes = THEMES;
   readonly themeService = inject(ThemeService);
@@ -102,6 +103,13 @@ export class SettingsPage {
     });
     await alert.present();
     return (await alert.onDidDismiss()).role === 'confirm';
+  }
+
+  /** Android's own prompt for adding the lock-screen tile (ADR-0006). */
+  async addTile(): Promise<void> {
+    const result = await this.lockScreen.requestAddTile();
+    const message = this.transloco.translate(`settings.lockScreen.${result}`);
+    await (await this.toasts.create({ message, duration: 3000 })).present();
   }
 
   async openSourceCode(): Promise<void> {

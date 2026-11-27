@@ -47,7 +47,7 @@ jobs:
       - run: npm run android:sync
       - name: Native license list is up to date (ADR-0019)
         run: npm run licenses:android && git diff --exit-code src/assets/licenses/
-      - run: ./gradlew assembleDebug
+      - run: ./gradlew assembleDebug testDebugUnitTest
         working-directory: android
       - uses: actions/upload-artifact@v5
         with:

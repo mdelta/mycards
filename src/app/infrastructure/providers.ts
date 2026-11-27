@@ -4,7 +4,7 @@ import { InjectionToken, Injector, inject, isDevMode, makeEnvironmentProviders }
 import { App } from '@capacitor/app';
 import { AppLauncher } from '@capacitor/app-launcher';
 import { Camera } from '@capacitor/camera';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Filesystem } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
@@ -25,6 +25,8 @@ import type { PresentationMode } from '../domain/ports/presentation-mode';
 import type { SettingsStore } from '../domain/ports/settings-store';
 import { BackupService } from '../domain/services/backup-service';
 import { CardService } from '../domain/services/card-service';
+import { LockScreenService } from '../domain/services/lock-screen-service';
+import { NotifyingCardRepository } from '../domain/services/notifying-card-repository';
 import { PhotoService } from '../domain/services/photo-service';
 import { TelemetryService } from '../domain/services/telemetry-service';
 
@@ -36,6 +38,8 @@ import { MlKitBarcodeScanner } from './barcode/mlkit-barcode-scanner';
 import { CapacitorPresentationMode } from './display/capacitor-presentation-mode';
 import { BrowserExternalLauncher } from './links/browser-external-launcher';
 import { CapacitorExternalLauncher } from './links/capacitor-external-launcher';
+import type { LockScreenPlugin } from './lock-screen/capacitor-lock-screen';
+import { CapacitorLockScreen } from './lock-screen/capacitor-lock-screen';
 import { CanvasImageProcessor } from './photos/canvas-image-processor';
 import { CapacitorPhotoSource } from './photos/capacitor-photo-source';
 import { FilesystemPhotoStore } from './photos/filesystem-photo-store';
@@ -105,6 +109,20 @@ export const TELEMETRY = new InjectionToken<TelemetryService>('Telemetry', {
   },
 });
 
+/** Quick Settings tile showing marked cards over the lock screen (F-08, ADR-0006). */
+export const LOCK_SCREEN = new InjectionToken<LockScreenService>('LockScreen', {
+  providedIn: 'root',
+  factory: () => {
+    const injector = inject(Injector);
+    const document = inject(DOCUMENT);
+    return new LockScreenService(
+      new CapacitorLockScreen(Filesystem, registerPlugin<LockScreenPlugin>('LockScreen'), Capacitor.isNativePlatform()),
+      () => injector.get(CARD_REPOSITORY),
+      new BwipBarcodeRenderer(() => document.createElement('canvas')),
+    );
+  },
+});
+
 /** Closes the app; Ionic's Back handling replaces Android's default once `@capacitor/app` is installed. */
 export const EXIT_APP = new InjectionToken<() => Promise<void>>('ExitApp', {
   providedIn: 'root',
@@ -115,7 +133,19 @@ export const EXIT_APP = new InjectionToken<() => Promise<void>>('ExitApp', {
 export function provideCardStorage(): EnvironmentProviders {
   return makeEnvironmentProviders([
     { provide: SQL_DATABASE, useFactory: () => new CapacitorSqlDatabase(openConnection, migrate) },
-    { provide: CARD_REPOSITORY, useFactory: () => new SqliteCardRepository(inject(SQL_DATABASE)) },
+    {
+      provide: CARD_REPOSITORY,
+      useFactory: () => {
+        const injector = inject(Injector);
+        // Card changes update the lock-screen cards (ADR-0006).
+        return new NotifyingCardRepository(new SqliteCardRepository(inject(SQL_DATABASE)), () => {
+          injector
+            .get(LOCK_SCREEN)
+            .sync()
+            .catch(() => undefined);
+        });
+      },
+    },
     cardServiceProvider(),
   ]);
 }

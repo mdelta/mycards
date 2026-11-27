@@ -23,10 +23,22 @@ are displayed. The user can swipe between them; favorites come first.
 2. Start the Capacitor WebView in a restricted "lock mode". Less Kotlin, but higher risk of
    exposing the whole app without unlocking, and slower start.
 
+## Details (PO 2026-11-27)
+
+- Each card shows its store name, the barcode image and the card number as text. Cards without a
+  barcode type show name and number only.
+- Settings has an "Add tile" button that opens Android's own prompt
+  (`StatusBarManager.requestAddTileService`); the tile can also be added in Quick Settings' editor.
+- Files: the app writes `files/lockscreen/cards.json` (ordered list of name, number and image file)
+  and one PNG per card (bwip-js, 4 pixels per module) after every card change and at app start.
+  The Activity only reads this folder. The folder is excluded from Auto Backup and device transfer.
+- The Activity shows the screen at full brightness, keeps it on, and closes when it is no longer
+  visible (e.g. screen off). It is not exported and has no link into the main app.
+
 ## Consequences
 
 - A small custom Capacitor plugin / Android component in Kotlin is required (accepted exception
   to the TypeScript preference).
 - Barcodes of marked cards are visible to anyone holding the device – hence opt-in per card.
-- Behaviour of tiles and lock-screen activities varies between Android versions and vendors; an
-  early prototype on real devices is planned.
+- Behaviour of tiles and lock-screen activities varies between Android versions and vendors; the
+  feature is tested on an emulator and, before the release, on real devices.
