@@ -22,6 +22,8 @@ npm run lint                # ESLint + Prettier
 npm test                    # unit (Vitest) and e2e (Playwright) tests
 npm run test:coverage       # unit tests with coverage report in coverage/app/ (goal: 80 % lines)
 npm run android:build:debug # debug APK in android/app/build/outputs/apk/debug/
+
+adb install -r android/app/build/outputs/apk/debug/app-debug.ap
 ```
 
 Source code layout: arc42 section 5.2.
