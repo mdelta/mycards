@@ -357,7 +357,7 @@ Scenarios derived from the prioritized quality goals in section 1.2.
 | Auto Backup has a per-app size quota (documented by Google as 25 MB); many photos may exceed it and the backup then stops | Photos shrunk to ≤ 1600 px, JPEG 80 % (ADR-0003); exclude regenerable files; manual export remains the primary backup |
 | ML Kit depends on Google libraries/Play services – app not suitable for F-Droid / de-Googled devices | Accepted (ADR-0010) |
 | ML Kit sends usage metrics (device info, app version, per-installation ID, events, errors – no images or barcode values) to Google; no documented opt-out | Accepted and disclosed in privacy policy and Data-safety form (ADR-0010) |
-| Lock-screen feature needs native Kotlin and may behave differently across vendors / Android versions | Keep it optional, isolate in a small Kotlin component (ADR-0006); test on an emulator and on real devices before the release |
+| Lock-screen feature needs native Kotlin and may behave differently across vendors / Android versions | Keep it optional, isolate in a small Kotlin component (ADR-0006); test on an emulator and on real devices before the release; accepted: the tested Android 14 image asks to unlock first, Android 17 doesn't (ADR-0006) |
 | Lock-screen screen could expose more than intended (e.g. whole app reachable without unlock) | Separate minimal Activity that only shows barcodes (ADR-0006) |
 | Catima format changes or is under-specified | Version detection, tests with real Catima exports, compatibility mode documented separately |
 | Opt-in Sentry reports could accidentally contain card data (e.g. in an error message or breadcrumb) | Allow-list of sent fields, `beforeSend` scrubbing, no default PII, tests; user can review every sent report (ADR-0018) |

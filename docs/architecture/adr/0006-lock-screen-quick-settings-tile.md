@@ -42,3 +42,7 @@ are displayed. The user can swipe between them; favorites come first.
 - Barcodes of marked cards are visible to anyone holding the device – hence opt-in per card.
 - Behaviour of tiles and lock-screen activities varies between Android versions and vendors; the
   feature is tested on an emulator and, before the release, on real devices.
+- Known limitation (PO emulator test 2026-11-27): on the tested Android 14 image, Android asks to
+  unlock before the tile opens the card screen; on Android 17 it opens without unlocking. Accepted
+  by the PO: apps targeting Android 14+ can only start the screen with
+  `startActivityAndCollapse(PendingIntent)`, so there is no app-side workaround.
