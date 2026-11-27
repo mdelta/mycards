@@ -55,6 +55,21 @@ describe('CapacitorLockScreen', () => {
     expect([...files.keys()].sort()).toEqual(['lockscreen/card-0.png', 'lockscreen/cards.json']);
   });
 
+  it('leaves an empty list when writing an image fails', async () => {
+    files.set('lockscreen/cards.json', JSON.stringify({ version: 1, cards: [{ storeName: 'Old', cardId: '9' }] }));
+    filesystem.writeFile.mockImplementationOnce(async ({ path, data }) => {
+      files.set(path, data);
+      return { uri: path };
+    });
+    filesystem.writeFile.mockRejectedValueOnce(new Error('disk full'));
+
+    await expect(
+      lockScreen().replaceCards([{ storeName: 'New', cardId: '1', barcode: new Uint8Array([1]) }]),
+    ).rejects.toThrow('disk full');
+
+    expect(JSON.parse(files.get('lockscreen/cards.json')!)).toEqual({ version: 1, cards: [] });
+  });
+
   it('ignores files that cannot be deleted', async () => {
     filesystem.deleteFile.mockRejectedValueOnce(new Error('busy'));
 

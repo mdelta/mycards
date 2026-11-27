@@ -28,6 +28,8 @@ export class CapacitorLockScreen implements LockScreen {
   ) {}
 
   async replaceCards(cards: readonly LockScreenCard[]): Promise<void> {
+    // Empty the list first, so a failed write never leaves cards visible that were unmarked.
+    await this.writeIndex({ version: 1, cards: [] });
     const index: LockScreenIndex = { version: 1, cards: [] };
     for (const [i, card] of cards.entries()) {
       const image = card.barcode ? `card-${i}.png` : undefined;
@@ -36,17 +38,21 @@ export class CapacitorLockScreen implements LockScreen {
       }
       index.cards.push({ storeName: card.storeName, cardId: card.cardId, ...(image && { image }) });
     }
+    await this.writeIndex(index);
+    const used = new Set([CARDS_FILE, ...index.cards.flatMap((card) => card.image ?? [])]);
+    const { files } = await this.filesystem.readdir({ path: LOCK_SCREEN_DIR, directory: Directory.Data });
+    for (const file of files.filter((f) => !used.has(f.name))) {
+      await this.filesystem.deleteFile(location(file.name)).catch(() => undefined);
+    }
+  }
+
+  private async writeIndex(index: LockScreenIndex): Promise<void> {
     await this.filesystem.writeFile({
       ...location(CARDS_FILE),
       data: JSON.stringify(index),
       encoding: Encoding.UTF8,
       recursive: true,
     });
-    const used = new Set([CARDS_FILE, ...index.cards.flatMap((card) => card.image ?? [])]);
-    const { files } = await this.filesystem.readdir({ path: LOCK_SCREEN_DIR, directory: Directory.Data });
-    for (const file of files.filter((f) => !used.has(f.name))) {
-      await this.filesystem.deleteFile(location(file.name)).catch(() => undefined);
-    }
   }
 
   async requestAddTile(): Promise<AddTileResult> {
