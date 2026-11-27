@@ -75,3 +75,33 @@ describe('BwipBarcodeRenderer', () => {
     await expect(renderer.toSvg('EAN_13', '5901234123458')).rejects.toThrow(/check digit/i);
   });
 });
+
+describe('BwipBarcodeRenderer.toPng', () => {
+  function fakeCanvas(blob: Blob | null): HTMLCanvasElement {
+    return { toBlob: (callback: BlobCallback, type: string) => callback(type === 'image/png' ? blob : null) } as never;
+  }
+
+  it('draws the barcode on a canvas and encodes it as PNG', async () => {
+    const toCanvas = vi.fn();
+    const canvas = fakeCanvas(new Blob([new Uint8Array([137, 80])]));
+    const renderer = new BwipBarcodeRenderer(
+      () => canvas,
+      async () => ({ toCanvas, toSVG: vi.fn() }),
+    );
+
+    expect(await renderer.toPng('CODE_39', 'abc')).toEqual(new Uint8Array([137, 80]));
+    expect(toCanvas).toHaveBeenCalledWith(
+      canvas,
+      expect.objectContaining({ bcid: 'code39ext', text: 'abc', scale: 4, backgroundcolor: 'FFFFFF' }),
+    );
+  });
+
+  it('rejects when the canvas cannot encode a PNG', async () => {
+    const renderer = new BwipBarcodeRenderer(
+      () => fakeCanvas(null),
+      async () => ({ toCanvas: vi.fn(), toSVG: vi.fn() }),
+    );
+
+    await expect(renderer.toPng('QR_CODE', 'x')).rejects.toThrow('PNG encoding failed');
+  });
+});

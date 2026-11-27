@@ -9,6 +9,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
+        // Only for the lock-screen tile (ADR-0006); same version as the Capacitor plugins use.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.20'
         classpath 'com.mikepenz.aboutlibraries.plugin:aboutlibraries-plugin:15.3.0'
         classpath 'com.google.gms:google-services:4.4.4'
 

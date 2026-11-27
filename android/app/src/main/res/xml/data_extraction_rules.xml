@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup keeps all app data (ADR-0014) except the lock-screen images, which the app redraws (ADR-0006). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="lockscreen/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="lockscreen/" />
+    </device-transfer>
+</data-extraction-rules>

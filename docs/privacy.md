@@ -19,6 +19,9 @@ MyCards stores the cards you add: store name, card ID, barcode, notes, tags, col
 and photos. It also stores your settings, such as the color theme. All of this is kept in the app's
 private storage on your phone. Other apps can't read it. Uninstalling MyCards deletes it.
 
+If you mark a card "Show on lock screen", MyCards also stores its name, number and barcode image for
+the lock-screen tile. Anyone holding your phone can then see these cards without unlocking it.
+
 ## Export and import
 
 MyCards writes an export file only when you ask for it. You choose where the file goes, for example
@@ -28,7 +31,8 @@ pick.
 
 ## Android backup
 
-Android may back up the app's data, including your cards and photos, to your Google account. This
+Android may back up the app's data, including your cards and photos, to your Google account. The
+lock-screen barcode images are left out, because MyCards draws them again. This
 depends on your phone's backup settings and is handled by Google under the
 [Google Privacy Policy](https://policies.google.com/privacy). You can turn backup off in Android's
 settings.

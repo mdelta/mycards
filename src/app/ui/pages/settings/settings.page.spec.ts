@@ -7,7 +7,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import en from '../../../../assets/i18n/en.json';
 import type { Theme } from '../../../domain/model/settings';
 import type { TelemetryConsent } from '../../../domain/model/telemetry';
-import { APP_INFO, EXTERNAL_LAUNCHER, SETTINGS_STORE, TELEMETRY } from '../../../infrastructure/providers';
+import { APP_INFO, EXTERNAL_LAUNCHER, LOCK_SCREEN, SETTINGS_STORE, TELEMETRY } from '../../../infrastructure/providers';
 
 import { SOURCE_CODE_URL, SettingsPage } from './settings.page';
 
@@ -26,6 +26,7 @@ describe('SettingsPage', () => {
     consent: () => Promise<TelemetryConsent>;
     setConsent: ReturnType<typeof vi.fn>;
   };
+  let lockScreen: { available: boolean; requestAddTile: ReturnType<typeof vi.fn> };
 
   async function create(): Promise<void> {
     await TestBed.configureTestingModule({
@@ -47,6 +48,7 @@ describe('SettingsPage', () => {
         { provide: ToastController, useValue: toastController },
         { provide: AlertController, useValue: alertController },
         { provide: TELEMETRY, useValue: telemetry },
+        { provide: LOCK_SCREEN, useValue: lockScreen },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(SettingsPage);
@@ -69,6 +71,7 @@ describe('SettingsPage', () => {
       consent: async () => ({ crashReports: false, usageData: true }),
       setConsent: vi.fn(async () => undefined),
     };
+    lockScreen = { available: false, requestAddTile: vi.fn(async () => 'added') };
   });
 
   const toggleEvent = (checked: boolean): CustomEvent<{ checked: boolean }> => {
@@ -171,5 +174,28 @@ describe('SettingsPage', () => {
     expect(toastController.create).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'No app found to open this link.' }),
     );
+  });
+
+  it('hides the lock-screen tile button in the browser', async () => {
+    await create();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="add-tile"]')).toBeNull();
+  });
+
+  it.each([
+    ['added', 'Tile added to Quick Settings.'],
+    ['alreadyAdded', 'The tile is already in Quick Settings.'],
+    ['notAdded', 'Tile not added.'],
+    ['failed', "Couldn't add the tile. Add it in Android's Quick Settings editor."],
+  ])('asks Android to add the lock-screen tile and reports %s', async (result, message) => {
+    lockScreen.available = true;
+    lockScreen.requestAddTile.mockResolvedValue(result);
+    await create();
+
+    fixture.nativeElement.querySelector('[data-testid="add-tile"]').click();
+    await fixture.whenStable();
+
+    expect(lockScreen.requestAddTile).toHaveBeenCalled();
+    expect(toastController.create).toHaveBeenCalledWith(expect.objectContaining({ message }));
   });
 });

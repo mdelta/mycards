@@ -205,6 +205,15 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "lockScreen": {
+      "header": "Lock screen",
+      "addTile": "Add tile to Quick Settings",
+      "hint": "The MyCards tile shows cards marked \"Show on lock screen\" without unlocking your phone. You can also add it in Android's Quick Settings editor.",
+      "added": "Tile added to Quick Settings.",
+      "alreadyAdded": "The tile is already in Quick Settings.",
+      "notAdded": "Tile not added.",
+      "failed": "Couldn't add the tile. Add it in Android's Quick Settings editor."
+    },
     "about": {
       "header": "About",
       "privacy": "Privacy policy",

@@ -37,6 +37,14 @@
           <p>{{ t('reports.hint') }}</p>
         </ion-label>
       </ion-item>
+      } @if (lockScreen.available) {
+      <ion-list-header>{{ t('lockScreen.header') }}</ion-list-header>
+      <ion-item [button]="true" (click)="addTile()" data-testid="add-tile">
+        <ion-label>
+          {{ t('lockScreen.addTile') }}
+          <p>{{ t('lockScreen.hint') }}</p>
+        </ion-label>
+      </ion-item>
       }
 
       <ion-list-header>{{ t('about.header') }}</ion-list-header>

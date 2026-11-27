@@ -21,26 +21,54 @@ const BCID: Record<BarcodeType, string> = {
   UPC_E: 'upce',
 };
 
+type Bwip = Pick<typeof BwipJs, 'toSVG' | 'toCanvas'>;
+
+/** Pixels per barcode module in PNG images; the lock screen scales them up without smoothing. */
+const PNG_SCALE = 4;
+
 /**
  * Offline barcode drawing with bwip-js (ADR-0017). bwip-js is about 1 MB, so it is loaded on the
  * first render instead of with the app start (quality goal 1).
  */
 export class BwipBarcodeRenderer implements BarcodeRenderer {
-  private bwip?: Promise<typeof BwipJs>;
+  private bwip?: Promise<Bwip>;
+
+  constructor(
+    private readonly createCanvas: () => HTMLCanvasElement = () => document.createElement('canvas'),
+    private readonly load: () => Promise<Bwip> = () => import('bwip-js/browser'),
+  ) {}
 
   async toSvg(type: BarcodeType, value: string): Promise<string> {
-    this.bwip ??= import('bwip-js/browser');
-    const { toSVG } = await this.bwip;
-    return toSVG({
-      bcid: type === 'CODE_39' && !isStandardCode39(value) ? 'code39ext' : BCID[type],
-      ...encode(type, value),
-      scale: 3,
-      // Quiet zone: about 12 modules for linear codes, 6 for 2D codes (points at scale 1).
-      paddingwidth: 12,
-      paddingheight: 12,
-      backgroundcolor: 'FFFFFF',
-    });
+    const { toSVG } = await this.library();
+    return toSVG({ ...options(type, value), scale: 3 });
   }
+
+  async toPng(type: BarcodeType, value: string): Promise<Uint8Array> {
+    const { toCanvas } = await this.library();
+    const canvas = this.createCanvas();
+    toCanvas(canvas, { ...options(type, value), scale: PNG_SCALE });
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) {
+      throw new Error('PNG encoding failed');
+    }
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+
+  private library(): Promise<Bwip> {
+    this.bwip ??= this.load();
+    return this.bwip;
+  }
+}
+
+function options(type: BarcodeType, value: string): BwipJs.RenderOptions {
+  return {
+    bcid: type === 'CODE_39' && !isStandardCode39(value) ? 'code39ext' : BCID[type],
+    ...encode(type, value),
+    // Quiet zone: about 12 modules for linear codes, 6 for 2D codes (points at scale 1).
+    paddingwidth: 12,
+    paddingheight: 12,
+    backgroundcolor: 'FFFFFF',
+  };
 }
 
 const ECI_TYPES: ReadonlySet<BarcodeType> = new Set(['AZTEC', 'DATA_MATRIX', 'PDF_417', 'QR_CODE']);
